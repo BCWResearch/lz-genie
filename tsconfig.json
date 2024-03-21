@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+      "lib": ["ESNext"],
+      "target": "ESNext",
+      "module": "commonjs",
+      "moduleResolution": "node",
+      "outDir": "./build",
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true,
+      "sourceMap": true,
+      "rootDir": ".",
+      "allowSyntheticDefaultImports": true,
+      "importHelpers": true,
+      "alwaysStrict": true,
+      "forceConsistentCasingInFileNames": true,
+      "noFallthroughCasesInSwitch": true,
+      "noImplicitReturns": false,
+      "noUnusedLocals": true,
+      "noUnusedParameters": true,
+      "noImplicitAny": false,
+      "noImplicitThis": false,
+      "resolveJsonModule": true,
+      "strictNullChecks": false,
+      "skipLibCheck": true
+  },
+  "exclude": [
+      "node_modules",
+      "build",
+      "dist",
+      "coverage",
+      "docs",
+      "scripts",
+      "test",
+      "tests"
+  ]
+}
