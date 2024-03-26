@@ -24,7 +24,7 @@ const networkSelect = async () => {
         message: 'Which Network do you want to deploy to?\n',
         choices: networks.map((name, idx) => {
             return [{
-                name: `${idx + 1}. ${name.slice(0, -1)}`,
+                name: `${idx + 1}. ${name}`,
                 value: name
             }, new Separator()]
         }).flat()
@@ -34,7 +34,6 @@ const networkSelect = async () => {
 }
 
 const run = async () => {
-    console.log('deploy');
     const contractSelected = await contractSelect();
     // console.log(contractSelected);
     const networkSelected = await networkSelect();
