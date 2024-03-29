@@ -5,6 +5,7 @@ export class InquirerUtils {
     public static async handlePrompt(input: any, backCb?: Function, exit: boolean = true, message?: string) {
         const loadedTasks = (Object.keys(input));
         const answer = await select({
+            pageSize: loadedTasks.length + (backCb ? 1 : 0) + (exit ? 1 : 0),
             message: message ?? 'What do you want to do?\n',
             choices: [...loadedTasks.map((task, idx) => {
                 const name = input[task].description;
@@ -38,9 +39,10 @@ export class InquirerUtils {
     public static async handleSelectionPrompt(input: any) {
         const loadedTasks = (Object.keys(input));
         const answer = await checkbox({
+            pageSize: loadedTasks.length,
             message: 'Select modules to add or remove\n',
             choices: [
-                new Separator(' =  OpenZeppelin = '),
+                // new Separator(' =  OpenZeppelin = '),
                 ...loadedTasks.map((task, idx) => {
                     const name = input[task].description;
                     return {
