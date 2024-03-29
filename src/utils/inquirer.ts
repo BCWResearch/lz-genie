@@ -1,5 +1,5 @@
 import select from '@inquirer/select';
-import checkbox, { Separator } from '@inquirer/checkbox';
+import checkbox from '@inquirer/checkbox';
 
 export class InquirerUtils {
     public static async handlePrompt(input: any, backCb?: Function, exit: boolean = true, message?: string) {
@@ -30,7 +30,7 @@ export class InquirerUtils {
                 process.exit(0);
             }
         }
-        if (answer === 'back') {
+        if (backCb && answer === 'back') {
             backCb();
             return;
         }
