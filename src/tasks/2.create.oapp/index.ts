@@ -1,5 +1,7 @@
 import { input } from '@inquirer/prompts';
+import { mkdirSync, cpSync } from 'fs';
 const cliProgress = require('cli-progress');
+
 
 export default {
     tag: 'create.oapp',
@@ -10,9 +12,21 @@ export default {
         });
         console.log();
         console.log(`Setting up an empty OApp project ${projectName}...`);
-        await mockProgressBar(1000);
-        console.log('Installing dependencies...');
-        await mockProgressBar(1000);
+        try{
+            mkdirSync(projectName);
+        }catch(e){
+            console.log(`Error: ${e.message}`);
+            return;
+        }
+        const currentDir =  __dirname;
+        // from /src/tasks/2.create.oapp/index.ts to projects/oapp
+        const projectDir = currentDir.split('/').slice(0, -3).join('/') + '/projects/oapp';
+        // copy all files from projectDir to projectName
+        cpSync(projectDir, projectName, {recursive: true});
+
+        await mockProgressBar(100);
+        // console.log('Installing dependencies...');
+        // await mockProgressBar(1000);
         console.log('Creating project files...');
         await mockProgressBar(1000);
         console.log('Project created successfully!');

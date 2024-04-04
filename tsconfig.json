@@ -23,4 +23,5 @@
       "strictNullChecks": false,
       "skipLibCheck": true,
   },
+  "exclude": ["projects"]
 }
