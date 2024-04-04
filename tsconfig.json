@@ -4,7 +4,7 @@
       "target": "ESNext",
       "module": "commonjs",
       "moduleResolution": "node",
-      "outDir": "./build",
+      "outDir": "./bin",
       "emitDecoratorMetadata": true,
       "experimentalDecorators": true,
       "sourceMap": true,
@@ -21,16 +21,6 @@
       "noImplicitThis": false,
       "resolveJsonModule": true,
       "strictNullChecks": false,
-      "skipLibCheck": true
+      "skipLibCheck": true,
   },
-  "exclude": [
-      "node_modules",
-      "build",
-      "dist",
-      "coverage",
-      "docs",
-      "scripts",
-      "test",
-      "tests"
-  ]
 }

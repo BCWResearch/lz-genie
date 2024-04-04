@@ -5,11 +5,15 @@
   "submodules": [
     "solidity-examples"
   ],
-  "main": "index.js",
+  "main": "bin/src/index.js",
+  "bin": {
+    "lzgenie": "bin/src/index.js"
+  },
   "scripts": {
     "postinstall": "submodules-install",
     "start": "ts-node src/index.ts",
     "build": "tsc",
+    "install:local": "yarn build && npm install -g",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

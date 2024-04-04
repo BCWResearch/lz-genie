@@ -110,3 +110,5 @@ cache/
 artifacts/
 deployments/
 .openzeppelin/
+
+bin/

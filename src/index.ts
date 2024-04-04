@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 import { printLogo } from './logo';
 import * as tasks from './tasks';
 import { InquirerUtils } from './utils/inquirer';
