@@ -41,8 +41,22 @@ const run = async () => {
     const contractSelected = await contractSelect();
     // console.log(contractSelected);
     const networkSelected = await networkSelect();
+    const currentDir =  __dirname;
+    const rootDir = currentDir.split('/').slice(0, -2).join('/');
+    const path = `${rootDir}/solidity-examples`;
     // console.log(networkSelected);
-    exec(`yarn --cwd solidity-examples hardhat --network ${networkSelected} deploy --tags ${contractSelected.slice(0, -3)}`, (err, stdout, stderr) => {
+    exec(`yarn --cwd ${path} install`, (err, stdout, stderr) => {
+        if (err) {
+            console.error(err);
+            return;
+        }
+        if (stderr) {
+            console.error(stderr);
+            return;
+        }
+        console.log(stdout);
+    });
+    exec(`yarn --cwd ${path} hardhat --network ${networkSelected} deploy --tags ${contractSelected.slice(0, -3)}`, (err, stdout, stderr) => {
         if (err) {
             console.error(err);
             return;
