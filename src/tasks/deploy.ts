@@ -3,7 +3,11 @@ import select, { Separator } from '@inquirer/select';
 import { exec } from 'child_process';
 
 const contractSelect = async () => {
-    const files = readdirSync('solidity-examples/deploy').filter(file => file.endsWith('.js'));
+    
+    const currentDir =  __dirname;
+    const rootDir = currentDir.split('/').slice(0, -2).join('/');
+    const path = `${rootDir}/solidity-examples/deploy`;
+    const files = readdirSync(path).filter(file => file.endsWith('.js'));
     const answer = await select({
         message: 'Which Contract do you want to deploy?\n',
         choices: files.map((name, idx) => {
