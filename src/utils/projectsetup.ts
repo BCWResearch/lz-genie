@@ -24,8 +24,13 @@ export class ProjectSetupUtil {
 
     public static async createNewProject(template: string): Promise<void> {
         const projectName = await input({
-            message: 'Enter the name of the project: '
+            message: 'Enter the name of the project: ',
+            default: 'my-project'
         });
+        if (!!!projectName) {
+            console.error('Project name is required!');
+            return;
+        }
         return await this.createProjectFromTemplate(template, projectName);
     }
 }
