@@ -1,10 +1,10 @@
 
-import { run } from '../deploy';
+import { DeployUtils } from '../../utils/deploy';
 
 export default {
     tag: 'deploy.proj',
     description: 'Deploy a Project',
     run: async (_backCb: Function) => {
-        await run();
+        await DeployUtils.deployProject();
     }
 }
