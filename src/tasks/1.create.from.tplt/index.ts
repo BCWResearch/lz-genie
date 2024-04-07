@@ -1,36 +1,6 @@
 import * as tasks from '..';
 import { InquirerUtils } from "../../utils/inquirer"
-import { input } from '@inquirer/prompts';
 import { ProjectSetupUtil } from '../../utils/projectsetup';
-const cliProgress = require('cli-progress');
-
-
-const mockProgressBar = async (splits: number) => {
-    const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-    bar.start(splits, 0);
-    let currentTime = 0;
-    while (currentTime < splits) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        currentTime += 100;
-        bar.update(currentTime);
-    }
-    bar.stop();
-    console.log();
-}
-
-const mockProjectSetup = async (templateName) => {
-    const projectName = await input({
-        message: 'Enter the name of the project: '
-    });
-    console.log();
-    console.log(`Setting up an ${templateName} OApp project ${projectName}...`);
-    await mockProgressBar(1000);
-    console.log('Installing dependencies...');
-    await mockProgressBar(1000);
-    console.log('Creating project files...');
-    await mockProgressBar(1000);
-    console.log('Project created successfully!');
-}
 
 export default {
     tag: 'create.from.template',
