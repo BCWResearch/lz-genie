@@ -1,6 +1,7 @@
 import * as tasks from '..';
 import { InquirerUtils } from "../../utils/inquirer"
 import { input } from '@inquirer/prompts';
+import { ProjectSetupUtil } from '../../utils/projectsetup';
 const cliProgress = require('cli-progress');
 
 
@@ -54,7 +55,7 @@ export default {
                 description: 'Setup an OFT Project',
                 tag: 'oft',
                 run: async () => {
-                    mockProjectSetup('OFT');
+                    await ProjectSetupUtil.createNewProject('oft');
                 }
 
             },

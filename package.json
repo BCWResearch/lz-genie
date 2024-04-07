@@ -12,7 +12,7 @@
   "scripts": {
     "postinstall": "submodules-install",
     "start": "ts-node src/index.ts",
-    "build": "rm -rf bin && tsc && chmod -R 755 bin && cp -r solidity-examples bin/src/solidity-examples && cp -r projects bin/projects",
+    "build": "rm -rf bin && tsc && chmod -R 755 bin && cp -r solidity-examples bin/solidity-examples && cp -r projects bin/projects",
     "install:local": "yarn build && npm install -g",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -30,6 +30,7 @@
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
+    "@types/cli-progress": "^3.11.5",
     "@types/inquirer": "^9.0.7",
     "@types/node": "^20.11.30",
     "typescript": "^5.4.3"
