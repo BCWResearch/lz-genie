@@ -37,18 +37,18 @@ export default {
     description: 'Create a New Project from a Template',
     run: async (_backCb: Function) => {
         InquirerUtils.handlePrompt({
-            'erc1155': {
-                description: 'Setup an ERC1155 Project',
-                tag: 'erc1155',
+            'onft1155': {
+                description: 'Setup an ONFT1155 Project',
+                tag: 'onft1155',
                 run: async () => {
-                    mockProjectSetup('ERC1155');
+                    await ProjectSetupUtil.createNewProject('onft1155');
                 }
             },
-            'erc721': {
-                description: 'Setup an ERC721 Project',
-                tag: 'erc721',
+            'onft721': {
+                description: 'Setup an ONFT721 Project',
+                tag: 'onft721',
                 run: async () => {
-                    mockProjectSetup('ERC721');
+                    await ProjectSetupUtil.createNewProject('onft721');
                 }
             },
             'oft': {
@@ -59,37 +59,43 @@ export default {
                 }
 
             },
-            'onft': {
-                description: 'Setup an ONFT Project',
-                tag: 'onft',
+            'proxyoft': {
+                description: 'Setup an ProxyOft Project',
+                tag: 'proxyoft',
                 run: async () => {
-                    mockProjectSetup('ONFT');
+                    await ProjectSetupUtil.createNewProject('proxyoft');
+                }
+
+            },
+            'proxyonft1155': {
+                description: 'Setup an ProxyONFT1155 Project',
+                tag: 'proxyonft1155',
+                run: async () => {
+                    await ProjectSetupUtil.createNewProject('proxyonft1155');
                 }
 
             },
             'oftv2': {
-                description: 'Setup an OFTV2 Project',
+                description: 'Setup a OFTV2 Project',
                 tag: 'oftv2',
                 run: async () => {
-                    mockProjectSetup('OFTV2');
+                    await ProjectSetupUtil.createNewProject('oftv2');
                 }
 
             },
             'pingpong': {
-                description: 'Setup a PingPong Project',
+                description: 'Setup an PingPong Project',
                 tag: 'pingpong',
                 run: async () => {
-                    mockProjectSetup('PingPong');
+                    await ProjectSetupUtil.createNewProject('pingpong');
                 }
-
             },
             'omnicounter': {
                 description: 'Setup an OmniCounter Project',
                 tag: 'omnicounter',
                 run: async () => {
-                    mockProjectSetup('OmniCounter');
+                    await ProjectSetupUtil.createNewProject('omnicounter');
                 }
-
             },
         }, () => {
             InquirerUtils.handlePrompt(tasks.default);
