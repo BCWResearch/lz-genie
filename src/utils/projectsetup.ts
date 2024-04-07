@@ -26,7 +26,9 @@ export class ProjectSetupUtil {
         const projectName = await input({
             message: 'Enter the name of the project: ',
             default: 'my-project'
-        });
+        }).catch(() => {
+            return undefined;
+        })
         if (!!!projectName) {
             console.error('Project name is required!');
             return;

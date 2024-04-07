@@ -11,7 +11,8 @@ export class InquirerUtils {
                 const name = input[task].description;
                 return [{
                     name: `${idx + 1}. ${name[0].toUpperCase() + name.slice(1)}`,
-                    value: input[task].tag
+                    value: input[task].tag,
+                    disabled: input[task]?.disabled
                 }]
             }).flat(),
 
@@ -24,7 +25,10 @@ export class InquirerUtils {
                 name: `${loadedTasks.length + (backCb ? 2 : 1)}. Exit`,
                 value: 'exit'
             }] : [])]
-        });
+        }).catch((_) => { });
+        if (!answer) {
+            return;
+        }
         if (answer === 'exit') {
             if (exit) {
                 process.exit(0);
@@ -51,7 +55,7 @@ export class InquirerUtils {
                     }
                 }),
             ],
-        });
+        }).catch((_) => {return [] });
         return answer;
     }
 

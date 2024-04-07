@@ -6,6 +6,10 @@ import { InquirerUtils } from './utils/inquirer';
 (async () => {
 
     printLogo();
-    InquirerUtils.handlePrompt(tasks.default);
+    try {
+        await InquirerUtils.handlePrompt(tasks.default);
+    } catch (_) {
+
+    }
 
 })();
