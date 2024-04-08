@@ -18,7 +18,21 @@ export class ProjectSetupUtil {
         PackageManagerUtil.installDependencies(packageManager, workingDir).catch((err) => {
             console.error(err);
         }).then(() => {
-            console.log('Project created successfully!');
+            console.log(`
+            # Navigate to your project
+            cd ./${projectName}
+            
+            #
+            # Follow the steps in hardhat.config.ts:
+            #
+            # - Create an .env file based on the provided template
+            # - Adjust the contracts to your liking
+            #
+            
+            # Deploy your contracts
+            npx hardhat lz:deploy
+            `
+            );
         });
     }
 
