@@ -1,5 +1,5 @@
 {
-  "name": "layerzero-quickstart",
+  "name": "bcw-lz-genie",
   "version": "1.0.0",
   "description": "A set of boilerplate, scaffolding and ready to use tools to get a dev up and running quickly on l0 usecases",
   "submodules": [
@@ -34,5 +34,12 @@
     "@types/inquirer": "^9.0.7",
     "@types/node": "^20.11.30",
     "typescript": "^5.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/BCWResearch/bcw-lz-genie.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   }
 }
