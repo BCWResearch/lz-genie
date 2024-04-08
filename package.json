@@ -10,7 +10,7 @@
     "lzgenie": "bin/src/index.js"
   },
   "scripts": {
-    "postinstall": "submodules-install",
+    "postinstall": "npm run build",
     "start": "ts-node src/index.ts",
     "build": "rm -rf bin && tsc && chmod -R 755 bin && cp -r projects bin/projects",
     "install:local": "yarn build && npm install -g",
