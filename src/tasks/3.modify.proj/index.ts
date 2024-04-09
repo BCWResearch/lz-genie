@@ -23,7 +23,8 @@ const mockProjectSetup = async (moduleName) => {
 
 export default {
     tag: 'modify.proj',
-    description: 'Add or Remove Modules to an Existing Project',
+    description: 'Add or Remove Modules (WIP)',
+    disabled: true,
     run: async (_backCb: Function) => {
         const answer = await InquirerUtils.handleSelectionPrompt({
             'mintable': {
