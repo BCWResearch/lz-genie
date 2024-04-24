@@ -38,7 +38,9 @@ export class InquirerUtils {
             backCb();
             return;
         }
-        input[answer].run();
+        if (input[answer]?.run)
+            input[answer].run();
+        return answer;
     }
     public static async handleSelectionPrompt(input: any) {
         const loadedTasks = (Object.keys(input));
@@ -55,7 +57,7 @@ export class InquirerUtils {
                     }
                 }),
             ],
-        }).catch((_) => {return [] });
+        }).catch((_) => { return [] });
         return answer;
     }
 

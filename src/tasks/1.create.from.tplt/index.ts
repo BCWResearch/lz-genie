@@ -30,7 +30,7 @@ export default {
 
             },
             'proxyoft': {
-                description: 'Setup an ProxyOft Project',
+                description: 'Setup a ProxyOft Project',
                 tag: 'proxyoft',
                 run: async () => {
                     await ProjectSetupUtil.createNewProject('proxyoft');
@@ -38,7 +38,7 @@ export default {
 
             },
             'proxyonft1155': {
-                description: 'Setup an ProxyONFT1155 Project',
+                description: 'Setup a ProxyONFT1155 Project',
                 tag: 'proxyonft1155',
                 run: async () => {
                     await ProjectSetupUtil.createNewProject('proxyonft1155');
@@ -46,7 +46,7 @@ export default {
 
             },
             'oftv2': {
-                description: 'Setup a OFTV2 Project',
+                description: 'Setup an OFTV2 Project',
                 tag: 'oftv2',
                 run: async () => {
                     await ProjectSetupUtil.createNewProject('oftv2');
@@ -54,7 +54,7 @@ export default {
 
             },
             'pingpong': {
-                description: 'Setup an PingPong Project',
+                description: 'Setup a PingPong Project',
                 tag: 'pingpong',
                 run: async () => {
                     await ProjectSetupUtil.createNewProject('pingpong');

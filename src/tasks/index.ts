@@ -7,7 +7,7 @@ import * as _05 from './5.deploy.proj';
 export default {
     [_01.default.tag]: _01.default,
     [_02.default.tag]: _02.default,
+    [_05.default.tag]: _05.default,
     [_03.default.tag]: _03.default,
     [_04.default.tag]: _04.default,
-    [_05.default.tag]: _05.default
 } as { [key: string]: any };

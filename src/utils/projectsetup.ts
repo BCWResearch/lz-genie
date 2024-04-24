@@ -30,6 +30,8 @@ export class ProjectSetupUtil {
             #
             
             # Deploy your contracts
+            npx lzgenie
+            # or
             npx hardhat lz:deploy
             `
             );
