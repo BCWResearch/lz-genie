@@ -82,8 +82,9 @@ export default {
             }, {})
             , _backCb, false, 'Select a contract to interact with:');
 
-        console.log({ selectedContract });
-
+        if (!selectedContract) {
+            return;
+        }
         // read contract file in memory
         const contractFile = path.join(artifactsDir, selectedContract, selectedContract.replace('.sol', '.json'));
         const contractData = fs.readFileSync(contractFile, 'utf-8');
@@ -123,9 +124,9 @@ export default {
             , _backCb, false, 'Select a function type to interact with:');
 
         if (selectedFunctionType) {
-
+            const fnList = selectedFunctionType === 'getter' ? getterFunctions : setterFunctions;
             const selectedFunction = await InquirerUtils.handlePrompt(
-                (selectedFunctionType === 'getter' ? getterFunctions : setterFunctions)
+                fnList
                     .reduce((acc, f: any) => {
                         acc[f.name] = {
                             description: f.name,
@@ -137,8 +138,47 @@ export default {
                         return acc;
                     }, {})
                 , _backCb, false, `Select a ${selectedFunctionType} function to interact with:`);
-            console.log({ selectedFunction });
-        }
+
+            if (selectedFunction) {
+                // get inputs for the selected function
+                const selectedFn = fnList.find((f: any) => f.name === selectedFunction);
+                const inputs = selectedFn.inputs;
+                // console.log({ inputs });
+
+                // generate tasks .js file for interacting with the selected function
+
+                const tasksDir = path.join(cwd, 'tasks');
+                if (!fs.existsSync(tasksDir)) {
+                    fs.mkdirSync(tasksDir);
+                }
+                const onlyContractName = selectedContract.split('.sol')[0];
+                const tasksFile = path.join(tasksDir, `${selectedContract}_${selectedFunction}.js`);
+                const tasksContent = `module.exports = {
+    tag: '${onlyContractName}_${selectedFunction}',
+    description: 'Interact with ${onlyContractName}.${selectedFunction}',
+    run: async () => {
+        console.log('Interacting with ${onlyContractName}.${selectedFunction}');
+
+        const contract = await ethers.getContract('${onlyContractName}');
+
+        // contract inputs
+
+        ${inputs.map((i: any) => {
+                    return `const ${i.name.toUpperCase()} = '';`;
+                }).join('\n')
+                    }
+        
+        const result = await contract.${selectedFunction}(
+            ${inputs.map((i: any) => i.name.toUpperCase()).join(', ')
+                    });
+        console.log({ result });
+    }
+}`
+
+                fs.writeFileSync(tasksFile, tasksContent);
+                console.log(`Tasks file generated: ${tasksFile}`);
+            }
+        };
 
         // create a prompt for selecting a function or constructor to interact with
 
@@ -148,7 +188,7 @@ export default {
         //             description: f.name,
         //             tag: f.name,
         //             run: async () => {
-        //                 console.log(`Interacting with function: ${f.name}`);
+        //                 console.log(`Interacting with function: $ { f.name }`);
         //             }
         //         };
         //         return acc;
@@ -158,7 +198,7 @@ export default {
         //                 description: constructor.name,
         //                 tag: constructor.name,
         //                 run: async () => {
-        //                     console.log(`Interacting with constructor: ${constructor.name}`);
+        //                     console.log(`Interacting with constructor: ${ constructor.name } `);
         //                 }
         //             }
         //         } : {}
@@ -181,7 +221,7 @@ export default {
                         description: network,
                         tag: network,
                         run: async () => {
-                            console.log(`Interacting with contract: ${selectedContract} on network: ${network}`);
+                            console.log(`Interacting with contract: ${ selectedContract } on network: ${ network } `);
                         }
                     };
                     return acc;

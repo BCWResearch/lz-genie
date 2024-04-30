@@ -4,8 +4,9 @@ import checkbox from '@inquirer/checkbox';
 export class InquirerUtils {
     public static async handlePrompt(input: any, backCb?: Function, exit: boolean = true, message?: string) {
         const loadedTasks = (Object.keys(input));
+        const pageSize = loadedTasks.length + (backCb ? 1 : 0) + (exit ? 1 : 0);
         const answer = await select({
-            pageSize: loadedTasks.length + (backCb ? 1 : 0) + (exit ? 1 : 0),
+            pageSize: Math.min(10, pageSize),
             message: message ?? 'What do you want to do?\n',
             choices: [...loadedTasks.map((task, idx) => {
                 const name = input[task].description;
@@ -17,12 +18,12 @@ export class InquirerUtils {
             }).flat(),
 
             ...(backCb ? [{
-                name: `${loadedTasks.length + 1}. Back`,
+                name: `<------- Back ------->`,
                 value: 'back'
             }] : []),
 
             ...(exit ? [{
-                name: `${loadedTasks.length + (backCb ? 2 : 1)}. Exit`,
+                name: `❌ Exit`,
                 value: 'exit'
             }] : [])]
         }).catch((_) => { });
