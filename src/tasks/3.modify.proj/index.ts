@@ -1,108 +1,118 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import checkbox from '@inquirer/checkbox';
+import * as tasks from '..';
 import { InquirerUtils } from "../../utils/inquirer"
-const cliProgress = require('cli-progress');
+import ContractModifier from '../../utils/contractModifier';
+// const cliProgress = require('cli-progress');
 
-const mockProgressBar = async (splits: number) => {
-    const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-    bar.start(splits, 0);
-    let currentTime = 0;
-    while (currentTime < splits) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        currentTime += 100;
-        bar.update(currentTime);
-    }
-    bar.stop();
-    console.log();
+const defaultBackCb = () => {
+    return InquirerUtils.handlePrompt(tasks.default);
 }
 
-const mockProjectSetup = async (moduleName) => {
-    console.log();
-    console.log(`Adding Module ${moduleName}`);
-    await mockProgressBar(1000);
-    
-}
+// const mockProgressBar = async (splits: number) => {
+//     const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+//     bar.start(splits, 0);
+//     let currentTime = 0;
+//     while (currentTime < splits) {
+//         await new Promise(resolve => setTimeout(resolve, 100));
+//         currentTime += 100;
+//         bar.update(currentTime);
+//     }
+//     bar.stop();
+//     console.log();
+// }
+
+// const mockProjectSetup = async (moduleName) => {
+//     console.log();
+//     console.log(`Adding Module ${moduleName}`);
+//     await mockProgressBar(1000);
+
+// }
 
 export default {
     tag: 'modify.proj',
     description: 'Add or Remove Modules',
     disabled: false,
     run: async (_backCb: Function) => {
-        const answer = await InquirerUtils.handleSelectionPrompt({
-            'mintable': {
-                description: 'Mintable Module',
-                tag: 'mintable',
-                run: async () => {
-                    console.log('Adding Mintable Module');
-                }
-            },
-            'burnable': {
-                description: 'Burnable Module',
-                tag: 'burnable',
-                run: async () => {
-                    console.log('Adding Burnable Module');
-                }
-            },
-            'supply-tracking': {
-                description: 'Supply Tracking Module',
-                tag: 'supply-tracking',
-                run: async () => {
-                    console.log('Adding Supply Tracking Module');
-                }
-            },
-            'pausable': {
-                description: 'Pausable Module',
-                tag: 'pausable',
-                run: async () => {
-                    console.log('Adding Pausable Module');
-                }
-            },
-            'updatable-uri': {
-                description: 'Updatable URI Module',
-                tag: 'updatable-uri',
-                run: async () => {
-                    console.log('Adding Updatable URI Module');
-                }
-            },
 
-            'ownable': {
-                description: 'Ownable Module',
-                tag: 'ownable',
-                run: async () => {
-                    console.log('Adding Ownable Module');
-                }
-            },
-            'roles': {
-                description: 'Roles Module',
-                tag: 'roles',
-                run: async () => {
-                    console.log('Adding Roles Module');
-                }
-            },
-            'managed': {
-                description: 'Managed Module',
-                tag: 'managed',
-                run: async () => {
-                    console.log('Adding Managed Module');
-                }
-            },
-            'transparent-proxy': {
-                description: 'Transparent Proxy Module',
-                tag: 'transparent-proxy',
-                run: async () => {
-                    console.log('Adding Transparent Proxy Module');
-                }
-            },
-            'uups-proxy': {
-                description: 'UUPS Proxy Module',
-                tag: 'uups-proxy',
-                run: async () => {
-                    console.log('Adding UUPS Proxy Module');
-                }
-            },
-
-        });
-        for (let i = 0; i < answer.length; i++) {
-            await mockProjectSetup(answer[i]);
+        _backCb = _backCb || defaultBackCb;
+        const cwd = process.cwd();
+        const hardhatConfigPath = path.join(cwd, 'hardhat.config.ts');
+        if (!fs.existsSync(hardhatConfigPath)) {
+            console.error('Not a Hardhat project. Exiting...');
+            return;
         }
-        console.log('Project updated successfully!');
+
+        // scan artifacts directory for contracts
+        const artifactsDir = path.join(cwd, 'artifacts', 'contracts');
+        if (!fs.existsSync(artifactsDir)) {
+            console.error('No artifacts directory found. Exiting...');
+            return;
+        }
+
+        // contract files are directory with .sol postfix
+        const contractFiles = fs.readdirSync(artifactsDir).filter(f => f.endsWith('.sol'));
+        if (!contractFiles.length) {
+            console.error('No contract files found. Exiting...');
+            return;
+        }
+
+
+        const selectedContract = await InquirerUtils.handlePrompt(
+            contractFiles.reduce((acc, f) => {
+                acc[f] = {
+                    description: f,
+                    tag: f,
+                    run: async () => {
+
+                    }
+                };
+                return acc;
+            }, {})
+            , _backCb, false, 'Select a contract to add/remove modules:');
+
+        if (!selectedContract) {
+            return;
+        }
+
+        // add absolute path of contract file from `contracts` dir instead of artifacts dir
+        const contractFile = path.join(cwd, 'contracts', selectedContract);
+
+        // console.log('Selected contract:', contractFile);
+        // return;
+
+        const openZeppelinModules = ContractModifier.getOpenZeppelinModules();
+
+        if (openZeppelinModules.length === 0) {
+            console.log("No OpenZeppelin modules found in node_modules directory.");
+            return;
+        }
+
+        const loadedTasks = openZeppelinModules.map((module, idx) => {
+            return {
+                name: `${idx + 1}. ${module[0].toUpperCase() + module.slice(1)}`,
+                value: module
+            };
+        });
+
+        const answer = await checkbox({
+            pageSize: 10,
+            message: 'Select modules to add or remove\n',
+            choices: loadedTasks,
+        }).catch((_) => { return [] });
+
+        const modulesToAdd = answer || [];
+        const modulesToRemove = openZeppelinModules.filter(module => !modulesToAdd.includes(module));
+
+        // Add selected modules
+        modulesToAdd.forEach(moduleName => {
+            ContractModifier.addModule(moduleName, contractFile);
+        });
+
+        // Remove unselected modules
+        modulesToRemove.forEach(moduleName => {
+            ContractModifier.removeModule(moduleName, contractFile);
+        });
     }
 }

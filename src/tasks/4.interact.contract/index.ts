@@ -42,7 +42,6 @@ export default {
     // disabled: true,
     run: async (_backCb: Function) => {
         _backCb = _backCb || defaultBackCb;
-        console.log('interact.proj');
         const cwd = process.cwd();
         const hardhatConfigPath = path.join(cwd, 'hardhat.config.ts');
         if (!fs.existsSync(hardhatConfigPath)) {
@@ -180,55 +179,6 @@ export default {
             }
         };
 
-        // create a prompt for selecting a function or constructor to interact with
-
-        // const selectedFunction = await InquirerUtils.handlePrompt(
-        //     functions.reduce((acc, f: any) => {
-        //         acc[f.name] = {
-        //             description: f.name,
-        //             tag: f.name,
-        //             run: async () => {
-        //                 console.log(`Interacting with function: $ { f.name }`);
-        //             }
-        //         };
-        //         return acc;
-        //     },
-        //         constructor ? {
-        //             [constructor.name]: {
-        //                 description: constructor.name,
-        //                 tag: constructor.name,
-        //                 run: async () => {
-        //                     console.log(`Interacting with constructor: ${ constructor.name } `);
-        //                 }
-        //             }
-        //         } : {}
-        //     )
-        //     , _backCb, false, 'Select a function to interact with:');
-
-        // console.log({ selectedFunction });
-
-
-
-        /*
-        const networkContracts = retrieveDeployedContracts(selectedContract);
-        const deployedNetworks = Object.keys(networkContracts);
-
-        if (deployedNetworks.length) {
-            deployedNetworks.push('Default');
-            const selectedNetwork = await InquirerUtils.handlePrompt(
-                deployedNetworks.reduce((acc, network) => {
-                    acc[network] = {
-                        description: network,
-                        tag: network,
-                        run: async () => {
-                            console.log(`Interacting with contract: ${ selectedContract } on network: ${ network } `);
-                        }
-                    };
-                    return acc;
-                }, {})
-            );
-            console.log({ selectedNetwork });
-        }*/
 
     }
 

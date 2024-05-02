@@ -45,8 +45,9 @@ export class InquirerUtils {
     }
     public static async handleSelectionPrompt(input: any) {
         const loadedTasks = (Object.keys(input));
+        const pageSize = loadedTasks.length;
         const answer = await checkbox({
-            pageSize: loadedTasks.length,
+            pageSize: Math.min(10, pageSize),
             message: 'Select modules to add or remove\n',
             choices: [
                 // new Separator(' =  OpenZeppelin = '),
