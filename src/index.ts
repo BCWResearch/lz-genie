@@ -1,11 +1,11 @@
 #! /usr/bin/env node
-import { printLogo } from './logo';
+// import { printLogo } from './logo';
 import * as tasks from './tasks';
 import { InquirerUtils } from './utils/inquirer';
 
 (async () => {
 
-    printLogo();
+    // printLogo();
     try {
         await InquirerUtils.handlePrompt(tasks.default);
     } catch (_) {
