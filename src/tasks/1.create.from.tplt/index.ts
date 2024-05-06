@@ -7,61 +7,71 @@ export default {
     description: 'Create a New Project from a Template',
     run: async (_backCb: Function) => {
         InquirerUtils.handlePrompt({
-            'onft1155': {
-                description: 'Setup an ONFT1155 Project',
-                tag: 'onft1155',
-                run: async () => {
-                    await ProjectSetupUtil.createNewProject('onft1155');
-                }
-            },
-            'onft721': {
-                description: 'Setup an ONFT721 Project',
-                tag: 'onft721',
-                run: async () => {
-                    await ProjectSetupUtil.createNewProject('onft721');
-                }
-            },
-            'oft': {
-                description: 'Setup an OFT Project',
-                tag: 'oft',
-                run: async () => {
-                    await ProjectSetupUtil.createNewProject('oft');
-                }
-
-            },
-            'proxyoft': {
-                description: 'Setup a ProxyOft Project',
-                tag: 'proxyoft',
-                run: async () => {
-                    await ProjectSetupUtil.createNewProject('proxyoft');
-                }
-
-            },
-            'proxyonft1155': {
-                description: 'Setup a ProxyONFT1155 Project',
-                tag: 'proxyonft1155',
-                run: async () => {
-                    await ProjectSetupUtil.createNewProject('proxyonft1155');
-                }
-
+            'v2':{
+                disabled: true,
+                description: 'V2',
             },
             'oftv2': {
-                description: 'Setup an OFTV2 Project',
+                description: 'OFT',
                 tag: 'oftv2',
                 run: async () => {
                     await ProjectSetupUtil.createNewProject('oftv2');
                 }
 
             },
+            'v1':{
+                disabled: true,
+                description: 'V1',
+            },
+            'oft': {
+                description: 'OFT',
+                tag: 'oft',
+                run: async () => {
+                    await ProjectSetupUtil.createNewProject('oft');
+                }
+
+            },
+            'onft1155': {
+                description: 'ONFT1155',
+                tag: 'onft1155',
+                run: async () => {
+                    await ProjectSetupUtil.createNewProject('onft1155');
+                }
+            },
+            'proxyonft1155': {
+                description: 'ProxyONFT1155',
+                tag: 'proxyonft1155',
+                run: async () => {
+                    await ProjectSetupUtil.createNewProject('proxyonft1155');
+                }
+
+            },
+            'onft721': {
+                description: 'ONFT721',
+                tag: 'onft721',
+                run: async () => {
+                    await ProjectSetupUtil.createNewProject('onft721');
+                }
+            },
+            
+            'proxyoft': {
+                description: 'ProxyOft',
+                tag: 'proxyoft',
+                run: async () => {
+                    await ProjectSetupUtil.createNewProject('proxyoft');
+                }
+
+            },
+            
             'pingpong': {
-                description: 'Setup a PingPong Project',
+                description: 'PingPong',
                 tag: 'pingpong',
                 run: async () => {
                     await ProjectSetupUtil.createNewProject('pingpong');
                 }
             },
             'omnicounter': {
-                description: 'Setup an OmniCounter Project',
+                description: 'OmniCounter',
                 tag: 'omnicounter',
                 run: async () => {
                     await ProjectSetupUtil.createNewProject('omnicounter');

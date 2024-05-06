@@ -1,17 +1,23 @@
 import select from '@inquirer/select';
 import checkbox from '@inquirer/checkbox';
+import { Separator } from '@inquirer/core';
 
 export class InquirerUtils {
     public static async handlePrompt(input: any, backCb?: Function, exit: boolean = true, message?: string) {
         const loadedTasks = (Object.keys(input));
         const pageSize = loadedTasks.length + (backCb ? 1 : 0) + (exit ? 1 : 0);
+        // TODO: make it performace efficient
+        const filteredTasks = loadedTasks.filter(task => !input[task]?.disabled);
         const answer = await select({
             pageSize: Math.min(10, pageSize),
             message: message ?? 'What do you want to do?\n',
-            choices: [...loadedTasks.map((task, idx) => {
+            choices: [...loadedTasks.map((task, _) => {
                 const name = input[task].description;
+                if (input[task]?.disabled)
+                    return [new Separator(`${name[0].toUpperCase() + name.slice(1)}`)];
+                const index = filteredTasks.indexOf(task);
                 return [{
-                    name: `${idx + 1}. ${name[0].toUpperCase() + name.slice(1)}`,
+                    name: `${index + 1}. ${name[0].toUpperCase() + name.slice(1)}`,
                     value: input[task].tag,
                     disabled: input[task]?.disabled
                 }]
