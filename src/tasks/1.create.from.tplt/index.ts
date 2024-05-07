@@ -7,30 +7,30 @@ export default {
     description: 'Create a New Project from a Template',
     run: async (_backCb: Function) => {
         InquirerUtils.handlePrompt({
-            'v2':{
-                disabled: true,
-                description: 'V2',
-            },
+            // 'v2':{
+            //     disabled: true,
+            //     description: 'V2',
+            // },
             'oftv2': {
-                description: 'OFT',
+                description: 'OFTV2',
                 tag: 'oftv2',
                 run: async () => {
                     await ProjectSetupUtil.createNewProject('oftv2');
                 }
 
             },
-            'v1':{
-                disabled: true,
-                description: 'V1',
-            },
-            'oft': {
-                description: 'OFT',
-                tag: 'oft',
-                run: async () => {
-                    await ProjectSetupUtil.createNewProject('oft');
-                }
+            // 'v1':{
+            //     disabled: true,
+            //     description: 'V1',
+            // },
+            // 'oft': {
+            //     description: 'OFT',
+            //     tag: 'oft',
+            //     run: async () => {
+            //         await ProjectSetupUtil.createNewProject('oft');
+            //     }
 
-            },
+            // },
             'onft1155': {
                 description: 'ONFT1155',
                 tag: 'onft1155',
