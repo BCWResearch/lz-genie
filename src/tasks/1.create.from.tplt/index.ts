@@ -55,7 +55,7 @@ export default {
             },
             
             'proxyoft': {
-                description: 'ProxyOft',
+                description: 'ProxyOFT',
                 tag: 'proxyoft',
                 run: async () => {
                     await ProjectSetupUtil.createNewProject('proxyoft');
