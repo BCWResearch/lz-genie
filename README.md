@@ -21,7 +21,7 @@ yarn install
 ## Run Locally
 
 ```bash
-yarn install:dev
+yarn install:local
 npx lzgenie
 ```
 
