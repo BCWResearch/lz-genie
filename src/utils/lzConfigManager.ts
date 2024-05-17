@@ -1,20 +1,37 @@
-import { Project, SourceFile, ts, Node, ObjectLiteralExpression, PropertyAssignment, ArrayLiteralExpression } from "ts-morph";
+import { Project, SourceFile, ts, ObjectLiteralExpression, PropertyAssignment, ArrayLiteralExpression } from "ts-morph";
 
 interface DVNConfig {
+    requiredDVNs: string[];
+    optionalDVNs: string[];
+}
+
+interface ConnectionConfig {
     sendConfig: {
-        requiredDVNs: string[];
-        optionalDVNs: string[];
+        executorConfig: {
+            maxMessageSize: number;
+            executor: string;
+        };
+        ulnConfig: {
+            confirmations: bigint;
+            requiredDVNs: string[];
+            optionalDVNs: string[];
+            optionalDVNThreshold: number;
+        };
     };
     receiveConfig: {
-        requiredDVNs: string[];
-        optionalDVNs: string[];
+        ulnConfig: {
+            confirmations: bigint;
+            requiredDVNs: string[];
+            optionalDVNs: string[];
+            optionalDVNThreshold: number;
+        };
     };
 }
 
 interface Connection {
     from: string;
     to: string;
-    dvns: DVNConfig;
+    config?: ConnectionConfig;
 }
 
 interface Contract {
@@ -36,18 +53,57 @@ export class LayerZeroConfigManager {
         this.contractsCache = this.cacheContracts();
     }
 
+    private handleError(message: string): never {
+        throw new Error(message);
+    }
+
     private getConfigObject(): ObjectLiteralExpression {
         return this.sourceFile.getVariableDeclarationOrThrow("config").getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression);
     }
 
-    private getArrayProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): ArrayLiteralExpression | undefined {
+    private getArrayProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): ArrayLiteralExpression {
         const property = objectLiteral.getProperty(propertyName) as PropertyAssignment;
-        return property?.getInitializerIfKind(ts.SyntaxKind.ArrayLiteralExpression);
+        if (!property) {
+            this.handleError(`Property ${propertyName} not found.`);
+        }
+        const arrayLiteral = property.getInitializerIfKind(ts.SyntaxKind.ArrayLiteralExpression);
+        if (!arrayLiteral) {
+            this.handleError(`Property ${propertyName} is not an array.`);
+        }
+        return arrayLiteral;
     }
 
-    private getProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): ObjectLiteralExpression | undefined {
+    private getObjectProperty(_objectLiteral: ObjectLiteralExpression, propertyName: string): ObjectLiteralExpression {
+        const property = _objectLiteral.getProperty(propertyName) as PropertyAssignment;
+        if (!property) {
+            this.handleError(`Property ${propertyName} not found.`);
+        }
+        const objectLiteral = property.getInitializerIfKind(ts.SyntaxKind.ObjectLiteralExpression);
+        if (!objectLiteral) {
+            this.handleError(`Property ${propertyName} is not an object.`);
+        }
+        return objectLiteral;
+    }
+
+    private getBigIntProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): bigint {
         const property = objectLiteral.getProperty(propertyName) as PropertyAssignment;
-        return property?.getInitializerIfKind(ts.SyntaxKind.ObjectLiteralExpression);
+        if (!property) {
+            this.handleError(`Property ${propertyName} not found.`);
+        }
+        const value = property.getInitializer().getText().replace(/BigInt\(([^)]+)\)/, '$1').trim();
+        if (!/^\d+$/.test(value)) {
+            this.handleError(`Invalid BigInt value for ${propertyName}: ${value}`);
+        }
+        return BigInt(value);
+    }
+
+    private getNumberProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): number {
+        const property = objectLiteral.getProperty(propertyName) as PropertyAssignment;
+        if (!property) {
+            this.handleError(`Property ${propertyName} not found.`);
+        }
+        const value = property.getInitializer().getText().trim();
+        return Number(value);
     }
 
     private cacheContracts(): Contract[] {
@@ -95,45 +151,54 @@ export class LayerZeroConfigManager {
             const from = (configObject.getProperty("from") as PropertyAssignment)?.getInitializer().getText();
             const to = (configObject.getProperty("to") as PropertyAssignment)?.getInitializer().getText();
 
-            const sendConfig = this.getProperty(configObject, "config")?.getProperty("sendConfig") as PropertyAssignment;
-            const receiveConfig = this.getProperty(configObject, "config")?.getProperty("receiveConfig") as PropertyAssignment;
+            const configProperty = configObject.getProperty("config") as PropertyAssignment | undefined;
+            if (!configProperty) {
+                connectionDVNs.push({ from, to });
+                return;
+            }
 
-            const dvnConfig: DVNConfig = {
+            const sendConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "sendConfig");
+            const receiveConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "receiveConfig");
+
+            const extractDVNConfig = (config: ObjectLiteralExpression | undefined): DVNConfig => {
+                if (!config) return { requiredDVNs: [], optionalDVNs: [] };
+                const ulnConfig = this.getObjectProperty(config, "ulnConfig");
+                const requiredDVNs = this.getArrayProperty(ulnConfig, "requiredDVNs");
+                const optionalDVNs = this.getArrayProperty(ulnConfig, "optionalDVNs");
+
+                return {
+                    requiredDVNs: requiredDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
+                    optionalDVNs: optionalDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
+                };
+            };
+
+            const executor = this.getObjectProperty(sendConfig, "executorConfig").getProperty("executor")?.getText() || null;
+            const executorAddress = null != executor ? executor.substring(executor.indexOf("'") + 1, executor.lastIndexOf("'")) : null;
+
+            const connectionConfig: ConnectionConfig = {
                 sendConfig: {
-                    requiredDVNs: [],
-                    optionalDVNs: []
+                    executorConfig: {
+                        maxMessageSize: this.getNumberProperty(this.getObjectProperty(sendConfig, "executorConfig"), "maxMessageSize"),
+                        executor: executorAddress,
+                    },
+                    ulnConfig: {
+                        confirmations: this.getBigIntProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "confirmations"),
+                        requiredDVNs: extractDVNConfig(sendConfig).requiredDVNs,
+                        optionalDVNs: extractDVNConfig(sendConfig).optionalDVNs,
+                        optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "optionalDVNThreshold"),
+                    },
                 },
                 receiveConfig: {
-                    requiredDVNs: [],
-                    optionalDVNs: []
-                }
+                    ulnConfig: {
+                        confirmations: this.getBigIntProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "confirmations"),
+                        requiredDVNs: extractDVNConfig(receiveConfig).requiredDVNs,
+                        optionalDVNs: extractDVNConfig(receiveConfig).optionalDVNs,
+                        optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "optionalDVNThreshold"),
+                    },
+                },
             };
 
-            const addDvn = (config: PropertyAssignment | undefined, type: "sendConfig" | "receiveConfig") => {
-                if (!config) return;
-                const ulnConfig = (config.getInitializerIfKind(ts.SyntaxKind.ObjectLiteralExpression) as ObjectLiteralExpression)?.getProperty("ulnConfig") as PropertyAssignment;
-                if (!ulnConfig) return;
-                const ulnConfigObject = ulnConfig.getInitializerIfKind(ts.SyntaxKind.ObjectLiteralExpression) as ObjectLiteralExpression;
-                const requiredDVNs = this.getArrayProperty(ulnConfigObject, "requiredDVNs");
-                const optionalDVNs = this.getArrayProperty(ulnConfigObject, "optionalDVNs");
-
-                if (requiredDVNs) {
-                    requiredDVNs.getElements().forEach(element => dvnConfig[type].requiredDVNs.push(element.getText().replace(/['"]+/g, '')));
-                } else {
-                    console.log(`No requiredDVNs found in ${type}.`);
-                }
-
-                if (optionalDVNs) {
-                    optionalDVNs.getElements().forEach(element => dvnConfig[type].optionalDVNs.push(element.getText().replace(/['"]+/g, '')));
-                } else {
-                    console.log(`No optionalDVNs found in ${type}.`);
-                }
-            };
-
-            addDvn(sendConfig, "sendConfig");
-            addDvn(receiveConfig, "receiveConfig");
-
-            connectionDVNs.push({ from, to, dvns: dvnConfig });
+            connectionDVNs.push({ from, to, config: connectionConfig });
         });
 
         return connectionDVNs;
@@ -152,18 +217,23 @@ export class LayerZeroConfigManager {
                 return;
             }
 
-            const configProperty = this.getProperty(configObject!, "config")?.getProperty(configType) as PropertyAssignment;
-            const addDvnToConfig = (config: PropertyAssignment | undefined) => {
+            const configProperty = configObject.getProperty("config") as PropertyAssignment | undefined;
+            if (!configProperty) {
+                console.warn(`No config found for connection from ${from} to ${to}`);
+                return;
+            }
+
+            const configNode = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), configType);
+            const addDvnToConfig = (config: ObjectLiteralExpression | undefined) => {
                 if (!config) return;
-                const ulnConfig = (config.getInitializerIfKind(ts.SyntaxKind.ObjectLiteralExpression) as ObjectLiteralExpression)?.getProperty("ulnConfig") as PropertyAssignment;
-                const ulnConfigObject = ulnConfig?.getInitializerIfKind(ts.SyntaxKind.ObjectLiteralExpression) as ObjectLiteralExpression;
-                const dvnArray = this.getArrayProperty(ulnConfigObject!, dvnType);
+                const ulnConfig = this.getObjectProperty(config, "ulnConfig");
+                const dvnArray = this.getArrayProperty(ulnConfig, dvnType);
                 if (dvnArray && !dvnArray.getText().includes(newDVN)) {
                     dvnArray.addElement(`'${newDVN}'`);
                 }
             };
 
-            addDvnToConfig(configProperty);
+            addDvnToConfig(configNode);
         });
     }
 
@@ -180,12 +250,17 @@ export class LayerZeroConfigManager {
                 return;
             }
 
-            const configProperty = this.getProperty(configObject!, "config")?.getProperty(configType) as PropertyAssignment;
-            const removeDvnFromConfig = (config: PropertyAssignment | undefined) => {
+            const configProperty = configObject.getProperty("config") as PropertyAssignment | undefined;
+            if (!configProperty) {
+                console.warn(`No config found for connection from ${from} to ${to}`);
+                return;
+            }
+
+            const configNode = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), configType);
+            const removeDvnFromConfig = (config: ObjectLiteralExpression | undefined) => {
                 if (!config) return;
-                const ulnConfig = (config.getInitializerIfKind(ts.SyntaxKind.ObjectLiteralExpression) as ObjectLiteralExpression)?.getProperty("ulnConfig") as PropertyAssignment;
-                const ulnConfigObject = ulnConfig?.getInitializerIfKind(ts.SyntaxKind.ObjectLiteralExpression) as ObjectLiteralExpression;
-                const dvnArray = this.getArrayProperty(ulnConfigObject!, dvnType);
+                const ulnConfig = this.getObjectProperty(config, "ulnConfig");
+                const dvnArray = this.getArrayProperty(ulnConfig, dvnType);
                 if (dvnArray) {
                     dvnArray.getElements().forEach((element, index) => {
                         if (element.getText().replace(/['"]+/g, '') === dvnToRemove) {
@@ -195,23 +270,79 @@ export class LayerZeroConfigManager {
                 }
             };
 
-            removeDvnFromConfig(configProperty);
+            removeDvnFromConfig(configNode);
         });
     }
 
-    public listConnections() {
+    public listConnections(): Connection[] {
         const config = this.getConfigObject();
         const connections = this.getArrayProperty(config, "connections");
-        return connections?.getElements().map(element => element.getText());
+
+        return connections.getElements().map(element => {
+            const configObject = element.asKind(ts.SyntaxKind.ObjectLiteralExpression);
+            const from = (configObject?.getProperty("from") as PropertyAssignment)?.getInitializer().getText().replace(/['"]+/g, '');
+            const to = (configObject?.getProperty("to") as PropertyAssignment)?.getInitializer().getText().replace(/['"]+/g, '');
+
+            const configProperty = configObject.getProperty("config") as PropertyAssignment | undefined;
+            if (!configProperty) {
+                return { from, to };
+            }
+
+            const sendConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "sendConfig");
+            const receiveConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "receiveConfig");
+
+            const extractDVNConfig = (config: ObjectLiteralExpression | undefined): DVNConfig => {
+                if (!config) return { requiredDVNs: [], optionalDVNs: [] };
+                const ulnConfig = this.getObjectProperty(config, "ulnConfig");
+                const requiredDVNs = this.getArrayProperty(ulnConfig, "requiredDVNs");
+                const optionalDVNs = this.getArrayProperty(ulnConfig, "optionalDVNs");
+
+                return {
+                    requiredDVNs: requiredDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
+                    optionalDVNs: optionalDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
+                };
+            };
+            const executor = this.getObjectProperty(sendConfig, "executorConfig").getProperty("executor")?.getText() || null;
+            const executorAddress = null != executor ? executor.substring(executor.indexOf("'") + 1, executor.lastIndexOf("'")) : null;
+
+            const connectionConfig: ConnectionConfig = {
+                sendConfig: {
+                    executorConfig: {
+                        maxMessageSize: this.getNumberProperty(this.getObjectProperty(sendConfig, "executorConfig"), "maxMessageSize"),
+                        executor: executorAddress,
+                    },
+                    ulnConfig: {
+                        confirmations: this.getBigIntProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "confirmations"),
+                        requiredDVNs: extractDVNConfig(sendConfig).requiredDVNs,
+                        optionalDVNs: extractDVNConfig(sendConfig).optionalDVNs,
+                        optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "optionalDVNThreshold"),
+                    },
+                },
+                receiveConfig: {
+                    ulnConfig: {
+                        confirmations: this.getBigIntProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "confirmations"),
+                        requiredDVNs: extractDVNConfig(receiveConfig).requiredDVNs,
+                        optionalDVNs: extractDVNConfig(receiveConfig).optionalDVNs,
+                        optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "optionalDVNThreshold"),
+                    },
+                },
+            };
+
+            return {
+                from,
+                to,
+                config: connectionConfig
+            };
+        });
     }
 
     public addConnection(fromContract: string, toContract: string) {
         const config = this.getConfigObject();
         const connections = this.getArrayProperty(config, "connections");
 
-        const newConnection = `{
-            from: ${fromContract},
-            to: ${toContract},
+        const newConnectionObject = {
+            from: fromContract,
+            to: toContract,
             config: {
                 sendConfig: {
                     executorConfig: {
@@ -219,7 +350,7 @@ export class LayerZeroConfigManager {
                         executor: '0x71d7a02cDD38BEa35E42b53fF4a42a37638a0066',
                     },
                     ulnConfig: {
-                        confirmations: BigInt(42),
+                        confirmations: 42,
                         requiredDVNs: [],
                         optionalDVNs: [],
                         optionalDVNThreshold: 2,
@@ -227,17 +358,22 @@ export class LayerZeroConfigManager {
                 },
                 receiveConfig: {
                     ulnConfig: {
-                        confirmations: BigInt(42),
+                        confirmations: 42,
                         requiredDVNs: [],
                         optionalDVNs: [],
                         optionalDVNThreshold: 2,
                     },
                 },
             },
-        }`;
-        
-        if (connections && !connections.getText().includes(newConnection)) {
-            connections.addElement(newConnection);
+        };
+
+        const newConnectionString = JSON.stringify(newConnectionObject, (key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+        ).replace(/"([^"]+)":/g, '$1:')
+            .replace(/"(\w+)"/g, "'$1'");
+
+        if (connections && !connections.getText().includes(newConnectionString)) {
+            connections.addElement(newConnectionString);
         }
     }
 
@@ -246,8 +382,9 @@ export class LayerZeroConfigManager {
         const connections = this.getArrayProperty(config, "connections");
 
         connections?.getElements().forEach((element, index) => {
-            const from = this.getProperty(element.asKind(ts.SyntaxKind.ObjectLiteralExpression)!, "from")?.getText();
-            const to = this.getProperty(element.asKind(ts.SyntaxKind.ObjectLiteralExpression)!, "to")?.getText();
+            const configObject = element.asKind(ts.SyntaxKind.ObjectLiteralExpression);
+            const from = (configObject?.getProperty("from") as PropertyAssignment)?.getInitializer().getText();
+            const to = (configObject?.getProperty("to") as PropertyAssignment)?.getInitializer().getText();
             if (from === fromContract && to === toContract) {
                 connections.removeElement(index);
             }
