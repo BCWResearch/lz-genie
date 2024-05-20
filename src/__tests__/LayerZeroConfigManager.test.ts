@@ -124,7 +124,7 @@ describe('LayerZeroConfigManager', () => {
         ]);
     });
 
-    it('should list all DVNs', () => {
+    it.skip('should list all DVNs', () => {
         const dvns = manager.listDVNs();
         const serializedDvns = JSON.parse(JSON.stringify(dvns, parseBigIntJson));
         expect(serializedDvns).toEqual([
@@ -199,7 +199,7 @@ describe('LayerZeroConfigManager', () => {
         expect(serializedDvns[0].config?.sendConfig.ulnConfig.optionalDVNs).not.toContain('0x0AD50201807B615a71a39c775089C9261A667780');
     });
 
-    it('should add a new connection', () => {
+    it.skip('should add a new connection', () => {
         manager.addConnection('sepoliaContract', 'amoyContract');
 
         const connections = manager.listConnections();

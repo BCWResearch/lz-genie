@@ -1,5 +1,5 @@
 {
-  "name": "lz-genie",
+  "name": "lzgenie",
   "version": "0.0.1",
   "description": "A set of boilerplate, scaffolding and ready to use tools to get a dev up and running quickly on l0 usecases",
   "submodules": [
@@ -52,8 +52,5 @@
   "repository": {
     "type": "git",
     "url": "git://github.com/BCWResearch/bcw-lz-genie.git"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
   }
 }
