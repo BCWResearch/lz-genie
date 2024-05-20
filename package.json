@@ -44,11 +44,10 @@
     "ts-morph": "^22.0.0",
     "ts-node": "^10.9.2"
   },
-  "devDependencies": {
-    "@types/cli-progress": "^3.11.5",
-    "@types/inquirer": "^9.0.7",
-    "@types/node": "^20.11.30",
-    "typescript": "^5.4.5"
+  "overrides": {
+    "@nomicfoundation/edr": "0.3.5",
+    "ethers": "^5.7.2",
+    "hardhat-deploy": "^0.12.1"
   },
   "repository": {
     "type": "git",

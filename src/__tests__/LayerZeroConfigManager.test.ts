@@ -106,9 +106,21 @@ describe('LayerZeroConfigManager', () => {
     it('should list all contracts', () => {
         const contracts = manager.listContracts();
         expect(contracts).toEqual([
-            'fujiContract',
-            'sepoliaContract',
-            'amoyContract',
+            {
+                "contractName": "fujiContract",
+                "eid": "EndpointId.AVALANCHE_V2_TESTNET",
+                "resolvedEid": 40106,
+            },
+            {
+                "contractName": "sepoliaContract",
+                "eid": "EndpointId.SEPOLIA_V2_TESTNET",
+                "resolvedEid": 40161,
+            },
+            {
+                "contractName": "amoyContract",
+                "eid": "EndpointId.AMOY_V2_TESTNET",
+                "resolvedEid": 40267,
+            }
         ]);
     });
 
