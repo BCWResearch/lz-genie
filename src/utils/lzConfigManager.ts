@@ -1,42 +1,27 @@
 import { Project, SourceFile, ts, ObjectLiteralExpression, PropertyAssignment, ArrayLiteralExpression } from "ts-morph";
+import type { OAppEdgeConfig, OAppOmniGraphHardhat, OmniPointHardhat, Uln302ExecutorConfig } from '@layerzerolabs/toolbox-hardhat'
+import { EndpointId } from "@layerzerolabs/lz-definitions";
 
 interface DVNConfig {
     requiredDVNs: string[];
     optionalDVNs: string[];
 }
 
-interface ConnectionConfig {
-    sendConfig: {
-        executorConfig: {
-            maxMessageSize: number;
-            executor: string;
-        };
-        ulnConfig: {
-            confirmations: bigint;
-            requiredDVNs: string[];
-            optionalDVNs: string[];
-            optionalDVNThreshold: number;
-        };
-    };
-    receiveConfig: {
-        ulnConfig: {
-            confirmations: bigint;
-            requiredDVNs: string[];
-            optionalDVNs: string[];
-            optionalDVNThreshold: number;
-        };
-    };
-}
+const ophDefault: OmniPointHardhat = {
+    eid: EndpointId.SEPOLIA_V2_TESTNET,
+    contractName: 'DummyDefault',
+} as any
 
 interface Connection {
-    from: string;
-    to: string;
-    config?: ConnectionConfig;
+    from: OmniPointHardhat;
+    to: OmniPointHardhat;
+    config?: OAppEdgeConfig;
 }
 
 interface Contract {
-    name: string;
-    details: ObjectLiteralExpression;
+    contractName: string;
+    eid: string;
+    resolvedEid?: number;
 }
 
 export class LayerZeroConfigManager {
@@ -59,6 +44,18 @@ export class LayerZeroConfigManager {
 
     private getConfigObject(): ObjectLiteralExpression {
         return this.sourceFile.getVariableDeclarationOrThrow("config").getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression);
+    }
+
+    private getContractDefinition(contractVariableName: string): Contract {
+        const ret = this.sourceFile.getVariableDeclarationOrThrow(contractVariableName);
+        const contractObject = ret.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression);
+        const contractName = (contractObject.getProperty("contractName") as PropertyAssignment)
+            ?.getInitializer()
+            .getText()
+            .replaceAll("\"", "")
+            .replaceAll("'", "");
+        const eid = (contractObject.getProperty("eid") as PropertyAssignment)?.getInitializer().getText() as any;
+        return { contractName, eid };
     }
 
     private getArrayProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): ArrayLiteralExpression {
@@ -120,15 +117,17 @@ export class LayerZeroConfigManager {
             const contractObject = element.asKind(ts.SyntaxKind.ObjectLiteralExpression);
             if (contractObject) {
                 const contractName = (contractObject.getProperty("contract") as PropertyAssignment)?.getInitializer().getText();
-                contracts.push({ name: contractName, details: contractObject });
+                const definition = this.getContractDefinition(contractName);
+                const resolvedEid = EndpointId[definition.eid.replace("EndpointId.", "")]
+                contracts.push({ contractName, eid: definition.eid, resolvedEid });
             }
         });
 
         return contracts;
     }
 
-    public listContracts(): string[] {
-        return this.contractsCache.map(contract => contract.name);
+    public listContracts(): Contract[] {
+        return this.contractsCache;
     }
 
     public listDVNs(): Connection[] {
@@ -148,12 +147,13 @@ export class LayerZeroConfigManager {
                 return;
             }
 
-            const from = (configObject.getProperty("from") as PropertyAssignment)?.getInitializer().getText();
-            const to = (configObject.getProperty("to") as PropertyAssignment)?.getInitializer().getText();
+            // DISABLED FOR FIRST ITERATION
+            // const from = (configObject.getProperty("from") as PropertyAssignment)?.getInitializer().getText();
+            // const to = (configObject.getProperty("to") as PropertyAssignment)?.getInitializer().getText();
 
             const configProperty = configObject.getProperty("config") as PropertyAssignment | undefined;
             if (!configProperty) {
-                connectionDVNs.push({ from, to });
+                connectionDVNs.push({ from: ophDefault, to: ophDefault });
                 return;
             }
 
@@ -175,14 +175,16 @@ export class LayerZeroConfigManager {
             const executor = this.getObjectProperty(sendConfig, "executorConfig").getProperty("executor")?.getText() || null;
             const executorAddress = null != executor ? executor.substring(executor.indexOf("'") + 1, executor.lastIndexOf("'")) : null;
 
-            const connectionConfig: ConnectionConfig = {
+            const connectionConfig: OAppEdgeConfig = {
                 sendConfig: {
                     executorConfig: {
                         maxMessageSize: this.getNumberProperty(this.getObjectProperty(sendConfig, "executorConfig"), "maxMessageSize"),
                         executor: executorAddress,
                     },
                     ulnConfig: {
-                        confirmations: this.getBigIntProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "confirmations"),
+                        // not necessary list output
+                        confirmations: BigInt(0),
+                        // this.getBigIntProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "confirmations"),
                         requiredDVNs: extractDVNConfig(sendConfig).requiredDVNs,
                         optionalDVNs: extractDVNConfig(sendConfig).optionalDVNs,
                         optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "optionalDVNThreshold"),
@@ -190,7 +192,9 @@ export class LayerZeroConfigManager {
                 },
                 receiveConfig: {
                     ulnConfig: {
-                        confirmations: this.getBigIntProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "confirmations"),
+                        // not necessary list output
+                        confirmations: BigInt(0),
+                        // this.getBigIntProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "confirmations"),
                         requiredDVNs: extractDVNConfig(receiveConfig).requiredDVNs,
                         optionalDVNs: extractDVNConfig(receiveConfig).optionalDVNs,
                         optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "optionalDVNThreshold"),
@@ -198,7 +202,7 @@ export class LayerZeroConfigManager {
                 },
             };
 
-            connectionDVNs.push({ from, to, config: connectionConfig });
+            connectionDVNs.push({ from: ophDefault, to: ophDefault, config: connectionConfig });
         });
 
         return connectionDVNs;
@@ -285,7 +289,7 @@ export class LayerZeroConfigManager {
 
             const configProperty = configObject.getProperty("config") as PropertyAssignment | undefined;
             if (!configProperty) {
-                return { from, to };
+                return { from: ophDefault, to: ophDefault };
             }
 
             const sendConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "sendConfig");
@@ -305,14 +309,16 @@ export class LayerZeroConfigManager {
             const executor = this.getObjectProperty(sendConfig, "executorConfig").getProperty("executor")?.getText() || null;
             const executorAddress = null != executor ? executor.substring(executor.indexOf("'") + 1, executor.lastIndexOf("'")) : null;
 
-            const connectionConfig: ConnectionConfig = {
+            const connectionConfig: OAppEdgeConfig = {
                 sendConfig: {
                     executorConfig: {
                         maxMessageSize: this.getNumberProperty(this.getObjectProperty(sendConfig, "executorConfig"), "maxMessageSize"),
                         executor: executorAddress,
                     },
                     ulnConfig: {
-                        confirmations: this.getBigIntProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "confirmations"),
+                        // TODO: fix `getBigIntProperty` in next revision
+                        confirmations: BigInt(0),
+                        // this.getBigIntProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "confirmations"),
                         requiredDVNs: extractDVNConfig(sendConfig).requiredDVNs,
                         optionalDVNs: extractDVNConfig(sendConfig).optionalDVNs,
                         optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "optionalDVNThreshold"),
@@ -320,7 +326,8 @@ export class LayerZeroConfigManager {
                 },
                 receiveConfig: {
                     ulnConfig: {
-                        confirmations: this.getBigIntProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "confirmations"),
+                        confirmations: BigInt(0),
+                        //this.getBigIntProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "confirmations"),
                         requiredDVNs: extractDVNConfig(receiveConfig).requiredDVNs,
                         optionalDVNs: extractDVNConfig(receiveConfig).optionalDVNs,
                         optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "optionalDVNThreshold"),
@@ -329,8 +336,8 @@ export class LayerZeroConfigManager {
             };
 
             return {
-                from,
-                to,
+                from: ophDefault,
+                to: ophDefault,
                 config: connectionConfig
             };
         });
@@ -339,18 +346,13 @@ export class LayerZeroConfigManager {
     public addConnection(fromContract: string, toContract: string) {
         const config = this.getConfigObject();
         const connections = this.getArrayProperty(config, "connections");
-
         const newConnectionObject = {
             from: fromContract,
             to: toContract,
             config: {
                 sendConfig: {
-                    executorConfig: {
-                        maxMessageSize: 99,
-                        executor: '0x71d7a02cDD38BEa35E42b53fF4a42a37638a0066',
-                    },
                     ulnConfig: {
-                        confirmations: 42,
+                        confirmations: BigInt(42),
                         requiredDVNs: [],
                         optionalDVNs: [],
                         optionalDVNThreshold: 2,
@@ -358,7 +360,7 @@ export class LayerZeroConfigManager {
                 },
                 receiveConfig: {
                     ulnConfig: {
-                        confirmations: 42,
+                        confirmations: BigInt(42),
                         requiredDVNs: [],
                         optionalDVNs: [],
                         optionalDVNThreshold: 2,
@@ -367,10 +369,10 @@ export class LayerZeroConfigManager {
             },
         };
 
-        const newConnectionString = JSON.stringify(newConnectionObject, (key, value) =>
-            typeof value === 'bigint' ? value.toString() : value
-        ).replace(/"([^"]+)":/g, '$1:')
-            .replace(/"(\w+)"/g, "'$1'");
+        const newConnectionString = JSON.stringify(newConnectionObject,
+            // TODO: Move serialization to a separate util function
+            (key, value) => typeof value === 'bigint' ? `BigInt(${value.toString()})` : value
+        ).replaceAll("\"", '');
 
         if (connections && !connections.getText().includes(newConnectionString)) {
             connections.addElement(newConnectionString);
