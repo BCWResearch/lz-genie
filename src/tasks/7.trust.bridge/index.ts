@@ -1,6 +1,7 @@
 // import { InquirerUtils } from "../../utils/inquirer";
 import { LayerZeroConfigManager } from "../../utils/lzConfigManager";
 import * as path from 'path';
+import * as fs from 'fs';
 import checkbox from '@inquirer/checkbox';
 
 export default {
@@ -10,6 +11,11 @@ export default {
         const cwd = process.cwd();
 
         const configFilePath = path.join(cwd, 'layerzero.config.ts');
+
+        if (!fs.existsSync(configFilePath)) {
+            console.error('Not a LayerZero project. Exiting...');
+            return;
+        }
 
         const manager = new LayerZeroConfigManager(configFilePath);
 

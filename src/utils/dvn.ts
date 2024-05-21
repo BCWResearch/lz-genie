@@ -1,5 +1,6 @@
 import { spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
 import { LayerZeroConfigManager } from "./lzConfigManager";
 import { DVNS } from '../dvn-definitions';
 import { InquirerUtils } from './inquirer';
@@ -8,7 +9,10 @@ export class DVNUtils {
     static async configureDVN() {
         const cwd = process.cwd();
         const configFilePath = path.join(cwd, 'layerzero.config.ts');
-
+        if (!fs.existsSync(configFilePath)) {
+            console.error('Not a LayerZero project. Exiting...');
+            return;
+        }
         const manager = new LayerZeroConfigManager(configFilePath);
         // List contracts
         const contracts = manager.listContracts();
