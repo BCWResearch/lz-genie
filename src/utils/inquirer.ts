@@ -4,7 +4,7 @@ import { Separator } from '@inquirer/core';
 
 export class InquirerUtils {
     public static async handlePrompt(input: any, backCb?: Function, exit: boolean = true, message?: string) {
-        const loadedTasks = (Object.keys(input));
+        const loadedTasks = Object.keys(input);
         const pageSize = loadedTasks.length + (backCb ? 1 : 0) + (exit ? 1 : 0);
         // TODO: make it performace efficient
         const filteredTasks = loadedTasks ||loadedTasks.filter(task => !input[task]?.disabled);
@@ -27,12 +27,16 @@ export class InquirerUtils {
                 name: `<------- Back`,
                 value: 'back'
             }] : []),
-
-            ...(exit ? [{
-                name: `❌ Exit`,
-                value: 'exit'
-            }] : [])]
-        }).catch((_) => { });
+                ...(exit
+                    ? [
+                          {
+                              name: `❌ Exit`,
+                              value: 'exit',
+                          },
+                      ]
+                    : []),
+            ],
+        }).catch((_) => {});
         if (!answer) {
             return;
         }
@@ -45,12 +49,11 @@ export class InquirerUtils {
             backCb();
             return;
         }
-        if (input[answer]?.run)
-            input[answer].run();
+        if (input[answer]?.run) input[answer].run();
         return answer;
     }
     public static async handleSelectionPrompt(input: any) {
-        const loadedTasks = (Object.keys(input));
+        const loadedTasks = Object.keys(input);
         const pageSize = loadedTasks.length;
         const answer = await checkbox({
             pageSize: Math.min(10, pageSize),
@@ -61,12 +64,13 @@ export class InquirerUtils {
                     const name = input[task].description;
                     return {
                         name: `${idx + 1}. ${name[0].toUpperCase() + name.slice(1)}`,
-                        value: input[task].tag
-                    }
+                        value: input[task].tag,
+                    };
                 }),
             ],
-        }).catch((_) => { return [] });
+        }).catch((_) => {
+            return [];
+        });
         return answer;
     }
-
 }

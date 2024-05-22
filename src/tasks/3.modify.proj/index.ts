@@ -1,41 +1,21 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import checkbox from '@inquirer/checkbox';
 import * as tasks from '..';
-import { InquirerUtils } from "../../utils/inquirer"
-import ContractModifier from '../../utils/contractModifier';
-// const cliProgress = require('cli-progress');
+import checkbox from '@inquirer/checkbox';
+import { InquirerUtils } from '../../utils/inquirer';
+import { SolidityEditor } from '../../utils/solidityEditor';
+import { CONTRACT_STANDARDS, AVAILABLE_MODULES } from '../../config/constants';
+import { InheritanceSpecifier } from '@solidity-parser/parser/dist/src/ast-types';
 
 const defaultBackCb = () => {
     return InquirerUtils.handlePrompt(tasks.default);
-}
-
-// const mockProgressBar = async (splits: number) => {
-//     const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-//     bar.start(splits, 0);
-//     let currentTime = 0;
-//     while (currentTime < splits) {
-//         await new Promise(resolve => setTimeout(resolve, 100));
-//         currentTime += 100;
-//         bar.update(currentTime);
-//     }
-//     bar.stop();
-//     console.log();
-// }
-
-// const mockProjectSetup = async (moduleName) => {
-//     console.log();
-//     console.log(`Adding Module ${moduleName}`);
-//     await mockProgressBar(1000);
-
-// }
+};
 
 export default {
     tag: 'modify.proj',
     description: 'Add or Remove Modules',
     disabled: false,
     run: async (_backCb: Function) => {
-
         _backCb = _backCb || defaultBackCb;
         const cwd = process.cwd();
         const hardhatConfigPath = path.join(cwd, 'hardhat.config.ts');
@@ -44,75 +24,98 @@ export default {
             return;
         }
 
-        // scan artifacts directory for contracts
-        const artifactsDir = path.join(cwd, 'artifacts', 'contracts');
-        if (!fs.existsSync(artifactsDir)) {
-            console.error('No artifacts directory found. Exiting...');
+        // scan contracts directory for contracts
+        const baseContractsDir = path.join(cwd, 'contracts');
+        if (!fs.existsSync(baseContractsDir)) {
+            console.error('No contracts directory found. Exiting...');
             return;
         }
 
-        // contract files are directory with .sol postfix
-        const contractFiles = fs.readdirSync(artifactsDir).filter(f => f.endsWith('.sol'));
+        // contract files are file with .sol extension
+        const contractFiles = fs.readdirSync(baseContractsDir).filter((f) => f.endsWith('.sol'));
         if (!contractFiles.length) {
             console.error('No contract files found. Exiting...');
             return;
         }
-
 
         const selectedContract = await InquirerUtils.handlePrompt(
             contractFiles.reduce((acc, f) => {
                 acc[f] = {
                     description: f,
                     tag: f,
-                    run: async () => {
-
-                    }
+                    run: async () => {},
                 };
                 return acc;
-            }, {})
-            , _backCb, false, 'Select a contract to add/remove modules:');
+            }, {}),
+            _backCb,
+            false,
+            'Select a contract to add/remove modules to:',
+        );
 
         if (!selectedContract) {
             return;
         }
 
         // add absolute path of contract file from `contracts` dir instead of artifacts dir
-        const contractFile = path.join(cwd, 'contracts', selectedContract);
+        const contractFilePath = path.join(baseContractsDir, selectedContract);
+        const contractSourceCode = SolidityEditor.readSolidityFile(contractFilePath);
+        const contractMetadata = SolidityEditor.getMetadata(contractSourceCode);
+        const contractModules = contractMetadata.baseContracts.map(
+            (inheritanceSpecifier: InheritanceSpecifier) => inheritanceSpecifier.baseName.namePath,
+        );
+        const contractType = contractModules.find((module) => CONTRACT_STANDARDS.includes(module)) || 'Custom';
 
-        // console.log('Selected contract:', contractFile);
-        // return;
+        const addOrRemove = await InquirerUtils.handlePrompt(
+            [
+                { description: 'Add Module', tag: 'add' },
+                { description: 'Remove Module', tag: 'remove', disabled: contractModules.length === 0 },
+            ],
+            _backCb,
+            false,
+            `You contract type is ${contractType}. Do you want to add or remove modules?`,
+        );
 
-        const openZeppelinModules = ContractModifier.getOpenZeppelinModules();
-
-        if (openZeppelinModules.length === 0) {
-            console.log("No OpenZeppelin modules found in node_modules directory.");
+        if (!addOrRemove) {
             return;
         }
 
-        const loadedTasks = openZeppelinModules.map((module, idx) => {
+        let modulesFiltered = [];
+        // If adding modules, show all available modules, minus the ones already in the contract
+        if (addOrRemove === 'add') {
+            const openZeppelinModules = Object.keys(AVAILABLE_MODULES);
+            modulesFiltered = openZeppelinModules.filter((module) => !contractModules.includes(module));
+        } else {
+            // If removing modules, show all modules in the contract
+            modulesFiltered = contractModules;
+        }
+
+        const loadedTasks = modulesFiltered.map((module, idx) => {
             return {
                 name: `${idx + 1}. ${module[0].toUpperCase() + module.slice(1)}`,
-                value: module
+                value: module,
             };
         });
 
-        const answer = await checkbox({
+        const modulesToModify = await checkbox({
             pageSize: 10,
-            message: 'Select modules to add or remove\n',
+            message: `Select modules to ${addOrRemove}\n`,
             choices: loadedTasks,
-        }).catch((_) => { return [] });
-
-        const modulesToAdd = answer || [];
-        const modulesToRemove = openZeppelinModules.filter(module => !modulesToAdd.includes(module));
-
-        // Add selected modules
-        modulesToAdd.forEach(moduleName => {
-            ContractModifier.addModule(moduleName, contractFile);
+        }).catch((_) => {
+            return [];
         });
 
-        // Remove unselected modules
-        modulesToRemove.forEach(moduleName => {
-            ContractModifier.removeModule(moduleName, contractFile);
-        });
-    }
-}
+        let modifiedSourceCode = contractSourceCode;
+        for (const module of modulesToModify) {
+            if (fs.existsSync(contractFilePath.split('.sol')[0] + '-modified-.sol')) {
+                fs.unlinkSync(contractFilePath.split('.sol')[0] + '-modified-.sol');
+            }
+
+            modifiedSourceCode =
+                addOrRemove === 'add'
+                    ? await SolidityEditor.addModule(modifiedSourceCode, module)
+                    : await SolidityEditor.removeModule(modifiedSourceCode, module);
+
+            SolidityEditor.saveModifiedFile(contractFilePath, modifiedSourceCode);
+        }
+    },
+};
