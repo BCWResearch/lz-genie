@@ -10,7 +10,7 @@ import 'hardhat-contract-sizer'
 import '@nomiclabs/hardhat-ethers'
 import '@layerzerolabs/toolbox-hardhat'
 import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
-import 'lz-genie/bin/src/hre';
+import 'lzgenie/bin/src/hre';
 import { EndpointId } from '@layerzerolabs/lz-definitions'
 
 // Set your preferred authentication method
