@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as tasks from '..';
 import { InquirerUtils } from "../../utils/inquirer"
+import { DeployUtils } from '../../utils/deploy';
 
 
 export const retrieveDeployedContracts = (contract: string) => {
@@ -48,6 +49,8 @@ export default {
             console.error('Not a Hardhat project. Exiting...');
             return;
         }
+        
+        await DeployUtils.compileContracts();
 
         // scan artifacts directory for contracts
         const artifactsDir = path.join(cwd, 'artifacts', 'contracts');

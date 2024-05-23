@@ -42,6 +42,24 @@ export class DeployUtils {
 
         return deployedContracts;
     }
+
+    static async compileContracts() {
+        return new Promise((resolve, reject) => {
+            const cwd = process.cwd();
+            const options: SpawnOptions = {
+                cwd,
+                stdio: 'inherit',
+                shell: true
+            };
+            const compileProcess = spawn('npx', ['hardhat', 'compile'], options);
+            compileProcess.on('exit', (code) => {
+                resolve(code);
+            });
+            compileProcess.on('error', (err) => {
+                reject(err);
+            });
+        });
+    }
 }
 
 
