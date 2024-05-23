@@ -1179,7 +1179,7 @@
 
 "@layerzerolabs/toolbox-hardhat@~0.2.21":
   version "0.2.24"
-  resolved "https://registry.npmjs.org/@layerzerolabs/toolbox-hardhat/-/toolbox-hardhat-0.2.24.tgz"
+  resolved "https://registry.yarnpkg.com/@layerzerolabs/toolbox-hardhat/-/toolbox-hardhat-0.2.24.tgz#eebf722c74f6cdc0e1caf3741696da16f5705a78"
   integrity sha512-bHJq+cQIfuV0wy7LZRmxSNwZ4b3K5tGoarNIeZq+iAFHPf0PlBEPZMXyTh/oYgdxo3VSa1hcWokTmCsYR3f8xA==
   dependencies:
     "@ethersproject/abi" "^5.7.0"
