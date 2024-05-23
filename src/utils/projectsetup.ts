@@ -26,6 +26,7 @@ export class ProjectSetupUtil {
             # Follow the steps in hardhat.config.ts:
             #
             # - Create an .env file based on the provided template
+            #   $  cp .env.example .env
             # - Adjust the contracts to your liking
             #
             
