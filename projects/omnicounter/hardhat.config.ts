@@ -12,7 +12,7 @@ import '@nomiclabs/hardhat-ethers'
 import '@layerzerolabs/toolbox-hardhat'
 import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
 import { EndpointId } from '@layerzerolabs/lz-definitions'
-import 'lzgenie/bin/hre';
+import 'lzgenie/bin/src/hre';
 import './tasks'
 
 // Set your preferred authentication method
