@@ -12,6 +12,7 @@ import '@layerzerolabs/toolbox-hardhat'
 import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
 import 'lzgenie/bin/src/hre';
 import { EndpointId } from '@layerzerolabs/lz-definitions'
+import './tasks'
 
 // Set your preferred authentication method
 //

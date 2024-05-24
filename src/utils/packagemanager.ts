@@ -3,7 +3,7 @@ import { SingleBar, Presets, } from 'cli-progress';
 
 export class PackageManagerUtil {
     private static progressBar: SingleBar = new SingleBar({
-        format: 'Installing dependencies... {bar}',
+        format: '{bar}',
         barCompleteChar: '\u2588',
         barIncompleteChar: '\u2591',
         hideCursor: true
@@ -34,7 +34,7 @@ export class PackageManagerUtil {
                 stdio: ['ignore', 'ignore', 'ignore'], // Suppress stdout and stderr
                 shell: true
             };
-
+            console.log(`Installing dependencies using ${packageManager}...`);
             const process = spawn(packageManager, ['install'], options);
 
             process.stdout?.on('data', (_data) => {
