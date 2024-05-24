@@ -26,7 +26,14 @@ This of LzGenie as a set of boilerplate, scaffolding and ready to use tools to g
 npm install -g yarn
 ```
 
-## Installation
+## Use LzGenie
+
+```bash 
+npx lzgenie@latest
+```
+
+
+# Development
 
 ```bash
 yarn install
@@ -36,7 +43,7 @@ yarn install
 
 ```bash
 yarn install:local
-npx lzgenie
+lzgenie
 ```
 
 ## Development

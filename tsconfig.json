@@ -24,8 +24,8 @@
     "resolveJsonModule": true,
     "strictNullChecks": false,
     "skipLibCheck": true,
-    "declaration": true,
-    "declarationMap": true,
+    // "declaration": true,
+    // "declarationMap": true,
   },
   "exclude": [
     "projects"
