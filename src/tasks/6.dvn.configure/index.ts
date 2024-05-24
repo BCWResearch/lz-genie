@@ -3,7 +3,7 @@ import { InquirerUtils } from "../../utils/inquirer";
 
 export default {
     tag: 'dvn.configure',
-    description: 'Set up DVN configuration',
+    description: 'Configuration',
     run: async (_backCb: Function) => {
         InquirerUtils.handlePrompt({
             'configure': {
@@ -15,7 +15,7 @@ export default {
                 }
             },
             'setConfig':{
-                description: 'Set DVN configuration on Chain',
+                description: 'Set DVN Configuration on Specified Chains',
                 tag: 'setConfig',
                 run: async () => {
                     DVNUtils.setDVNConfig();

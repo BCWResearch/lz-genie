@@ -42,7 +42,7 @@ export class ProjectSetupUtil {
     public static async createNewProject(template: string): Promise<void> {
         const projectName = await input({
             message: 'Enter the name of the project: ',
-            default: 'my-project'
+            // default: 'my-project'
         }).catch(() => {
             return undefined;
         })
