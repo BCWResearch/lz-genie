@@ -28,9 +28,14 @@ export class DVNUtils {
                 disabled: Object.keys(DVNS[dvn]).filter((eid) => contractsEid.includes(+eid)).length === 0
             }
         }).sort((a, b) => {
-            return a.disabled ? 1 : -1;
+            if (a.disabled && !b.disabled) {
+                return 1;
+            }
+            if (!a.disabled && b.disabled) {
+                return -1;
+            }
+            return 0;
         });
-
         const selectedDvn = await InquirerUtils.handlePrompt(availableDvns,);
 
         if (!selectedDvn) {
@@ -46,7 +51,7 @@ export class DVNUtils {
                     const to = contracts[j].contractName;
                     // Remove connection for v1
                     manager.removeConnection(from, to);
-                    manager.addConnection(from,to);
+                    manager.addConnection(from, to);
                     const eid = contracts.find((contract) => contract.contractName === from)?.resolvedEid;
 
                     if (eid === undefined) {
