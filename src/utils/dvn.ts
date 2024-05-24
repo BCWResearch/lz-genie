@@ -37,30 +37,27 @@ export class DVNUtils {
             return;
         }
 
-        const contractCombinations = [];
         for (let i = 0; i < contracts.length; i++) {
+            const from = contracts[i].contractName;
+            console.log(`Adding DVN for ${from} (${i + 1}/${contracts.length})`);
             for (let j = 0; j < contracts.length; j++) {
+                process.stdout.write(`\r${Math.round((j + 1) / contracts.length * 100)}%`);
                 if (i !== j) {
-                    contractCombinations.push([contracts[i].contractName, contracts[j].contractName]);
+                    const to = contracts[j].contractName;
+                    // Remove connection for v1
+                    manager.removeConnection(from, to);
+                    manager.addConnection(from,to);
+                    const eid = contracts.find((contract) => contract.contractName === from)?.resolvedEid;
+
+                    if (eid === undefined) {
+                        console.error(`EID not found for ${from}`);
+                        continue;
+                    }
+                    manager.addDVN(DVNS[selectedDvn][eid], from, to, 'sendConfig', 'optionalDVNs');
                 }
             }
+            console.log();
         }
-
-
-        contractCombinations.forEach((combination) => {
-            // Remove connection for v1
-            manager.removeConnection(combination[0], combination[1]);
-
-            // Add connection
-            manager.addConnection(combination[0], combination[1]);
-
-            const eid = contracts.find((contract) => contract.contractName === combination[0])?.resolvedEid;
-
-            // Add DVN
-            manager.addDVN(DVNS[selectedDvn][eid], combination[0], combination[1], 'sendConfig', 'optionalDVNs');
-
-        });
-
         manager.saveChanges();
     }
     static async setDVNConfig() {

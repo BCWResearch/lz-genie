@@ -6,6 +6,7 @@ import checkbox from '@inquirer/checkbox';
 
 export default {
     tag: 'trust.bridge',
+    disabled: true,
     description: 'Bridge Trust Between Contracts',
     run: async (_backCb: Function) => {
         const cwd = process.cwd();

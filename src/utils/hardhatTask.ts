@@ -30,7 +30,7 @@ export class HardhatTaskUtil {
         const indexFile = path.join(tasksDir, 'index.ts');
         const indexContent = fs.readFileSync(indexFile, 'utf-8');
         if (!indexContent.includes(importStatement)) {
-            fs.appendFileSync(indexFile, importStatement + '\n');
+            fs.appendFileSync(`\n${indexFile}`, importStatement + '\n');
             console.log(`Import statement added to ${indexFile}`);
         }
     }
