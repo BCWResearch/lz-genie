@@ -1,12 +1,11 @@
-// import { InquirerUtils } from "../../utils/inquirer";
-import { LayerZeroConfigManager } from "../../utils/lzConfigManager";
+import { InquirerUtils } from "../../utils/inquirer";
+import { spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import checkbox from '@inquirer/checkbox';
-
+import { getContracts, retrieveDeployedContracts } from "../../utils/contractUtils";
 export default {
     tag: 'trust.bridge',
-    disabled: true,
     description: 'Bridge Trust Between Contracts',
     run: async (_backCb: Function) => {
         const cwd = process.cwd();
@@ -18,21 +17,48 @@ export default {
             return;
         }
 
-        const manager = new LayerZeroConfigManager(configFilePath);
+        const contractFiles = getContracts();
 
-        // List contracts
-        const contracts = manager.listContracts();
+        const deployedContracts = contractFiles.reduce((acc, contract) => {
+            const onlyContractName = contract.split('.').slice(0, -1).join('.');
+            acc[onlyContractName] = retrieveDeployedContracts(contract);
+            return acc;
+        }, {} as Record<string, Record<string, string>>);
 
-        const contractCombinations = [];
-        for (let i = 0; i < contracts.length; i++) {
-            for (let j = 0; j < contracts.length; j++) {
+        const promptOptions = Object.keys(deployedContracts).reduce((acc, contractName) => {
+            acc[contractName] = {
+                description: contractName,
+                tag: contractName,
+            };
+            return acc;
+        }, {} as Record<string, any>);
+
+        const selectedContract = await InquirerUtils.handlePrompt(
+            promptOptions,
+            InquirerUtils.defaultBackCb,
+            true,
+            'Select contract to bridge trust'
+        );
+        if (!selectedContract) {
+            return;
+        }
+        const deployedNetworks = Object.keys(deployedContracts[selectedContract]);
+
+        const networkCombinations = [];
+        for (let i = 0; i < deployedNetworks.length; i++) {
+            for (let j = 0; j < deployedNetworks.length; j++) {
                 if (i !== j) {
-                    contractCombinations.push([contracts[i].contractName, contracts[j].contractName]);
+                    networkCombinations.push([deployedNetworks[i], deployedNetworks[j]]);
                 }
             }
         }
 
-        const promptOptions = contractCombinations.map((combination, idx) => {
+        if (networkCombinations.length < 2) {
+            console.error('Not enough networks to bridge trust');
+            return;
+        }
+
+        const promptOptions2 = networkCombinations.map((combination, idx) => {
             return {
                 name: `${idx + 1}. ${combination[0]} -> ${combination[1]}`,
                 value: combination
@@ -41,13 +67,47 @@ export default {
 
         const answer = await checkbox({
             pageSize: 10,
-            message: 'Select contract combinations to bridge trust\n',
-            choices: promptOptions,
+            message: 'Select network combinations to bridge trust\n',
+            choices: promptOptions2,
         }).catch((_) => { return [] });
 
-        answer.forEach((combination) => {
-            console.log(`Bridging trust between ${combination[0]} and ${combination[1]}`);
-        });
+        if (!answer) {
+            return;
+        }
+        for (const [sourceNetwork, targetNetwork] of answer) {
+            await setTrustBridge(selectedContract, sourceNetwork, targetNetwork);
+        }
 
     }
+}
+
+const setTrustBridge = async (contract: string, sourceNetwork: string, targetNetwork: string) => {
+    return new Promise((resolve, reject) => {
+        const cwd = process.cwd();
+        const options: SpawnOptions = {
+            cwd,
+            stdio: 'inherit',
+            shell: true
+        };
+        const bridgeProcess = spawn('npx', [
+            'hardhat',
+            'lzgenie:configure:trust',
+            `--network ${sourceNetwork}`,
+            `--source ${sourceNetwork}`,
+            `--target ${targetNetwork}`,
+            `--contract ${contract}`
+        ], options);
+        bridgeProcess.on('exit', (code) => {
+            if (code === 0) {
+                resolve(code);
+            } else {
+                reject(code);
+            }
+            console.log(`Bridge Trust of ${contract} from ${sourceNetwork} to ${targetNetwork} exited with code ${code}`);
+        });
+        bridgeProcess.on('error', (err) => {
+            console.error(err);
+            reject(err);
+        });
+    });
 }

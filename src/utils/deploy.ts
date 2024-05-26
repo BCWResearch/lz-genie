@@ -32,9 +32,10 @@ export class DeployUtils {
                 const contractName = contractFile.replace('.json', '');
                 const contractPath = path.join(networkDir, contractFile);
                 const contractData = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
+                if (acc[contractName] === undefined) acc[contractName] = {};
                 acc[contractName] = {
-                    network,
-                    address: contractData.address
+                    ...acc[contractName],
+                    [network]: contractData.address
                 };
             });
             return acc;

@@ -1,20 +1,21 @@
 import select from '@inquirer/select';
 import checkbox from '@inquirer/checkbox';
 import { Separator } from '@inquirer/core';
+import * as tasks from '../tasks';
 
 export class InquirerUtils {
     public static async handlePrompt(input: any, backCb?: Function, exit: boolean = true, message?: string) {
         const loadedTasks = Object.keys(input);
         const pageSize = loadedTasks.length + (backCb ? 1 : 0) + (exit ? 1 : 0);
         // TODO: make it performace efficient
-        const filteredTasks = loadedTasks ||loadedTasks.filter(task => !input[task]?.disabled);
+        const filteredTasks = loadedTasks || loadedTasks.filter(task => !input[task]?.disabled);
         const answer = await select({
             pageSize: Math.min(10, pageSize),
             message: message ?? 'What do you want to do?\n',
             choices: [...loadedTasks.map((task, _) => {
                 const name = input[task].description;
                 // if (input[task]?.disabled)
-                    // return [new Separator(`${name[0].toUpperCase() + name.slice(1)}`)];
+                // return [new Separator(`${name[0].toUpperCase() + name.slice(1)}`)];
                 const index = filteredTasks.indexOf(task);
                 return [{
                     name: `${index + 1}. ${name[0].toUpperCase() + name.slice(1)}`,
@@ -27,16 +28,16 @@ export class InquirerUtils {
                 name: `<------- Back`,
                 value: 'back'
             }] : []),
-                ...(exit
-                    ? [
-                          {
-                              name: `❌ Exit`,
-                              value: 'exit',
-                          },
-                      ]
-                    : []),
+            ...(exit
+                ? [
+                    {
+                        name: `❌ Exit`,
+                        value: 'exit',
+                    },
+                ]
+                : []),
             ],
-        }).catch((_) => {});
+        }).catch((_) => { });
         if (!answer) {
             return;
         }
@@ -73,4 +74,9 @@ export class InquirerUtils {
         });
         return answer;
     }
+
+    public static defaultBackCb() {
+        return InquirerUtils.handlePrompt(tasks.default);
+    }
+
 }

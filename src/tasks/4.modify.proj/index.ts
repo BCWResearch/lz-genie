@@ -6,6 +6,7 @@ import { InquirerUtils } from '../../utils/inquirer';
 import { SolidityEditor } from '../../utils/solidityEditor';
 import { CONTRACT_STANDARDS, AVAILABLE_MODULES } from '../../config/constants';
 import { InheritanceSpecifier } from '@solidity-parser/parser/dist/src/ast-types';
+import { getContracts } from '../../utils/contractUtils';
 
 const defaultBackCb = () => {
     return InquirerUtils.handlePrompt(tasks.default);
@@ -18,21 +19,9 @@ export default {
     run: async (_backCb: Function) => {
         _backCb = _backCb || defaultBackCb;
         const cwd = process.cwd();
-        const hardhatConfigPath = path.join(cwd, 'hardhat.config.ts');
-        if (!fs.existsSync(hardhatConfigPath)) {
-            console.error('Not a Hardhat project. Exiting...');
-            return;
-        }
-
-        // scan contracts directory for contracts
         const baseContractsDir = path.join(cwd, 'contracts');
-        if (!fs.existsSync(baseContractsDir)) {
-            console.error('No contracts directory found. Exiting...');
-            return;
-        }
-
-        // contract files are file with .sol extension
-        const contractFiles = fs.readdirSync(baseContractsDir).filter((f) => f.endsWith('.sol'));
+        const contractFiles = getContracts();
+        
         if (!contractFiles.length) {
             console.error('No contract files found. Exiting...');
             return;

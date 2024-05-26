@@ -25,6 +25,26 @@ export const retrieveDeployedContracts = (contract: string): Record<string, stri
     return networkContracts;
 }
 
+export const getContracts = (): string[] => {
+    const cwd = process.cwd();
+    const hardhatConfigPath = path.join(cwd, 'hardhat.config.ts');
+    if (!fs.existsSync(hardhatConfigPath)) {
+        console.error('Not a Hardhat project. Exiting...');
+        return;
+    }
+
+    // scan contracts directory for contracts
+    const baseContractsDir = path.join(cwd, 'contracts');
+    if (!fs.existsSync(baseContractsDir)) {
+        console.error('No contracts directory found. Exiting...');
+        return;
+    }
+
+    // contract files are file with .sol extension
+    const contractFiles = fs.readdirSync(baseContractsDir).filter((f) => f.endsWith('.sol'));
+    return contractFiles;
+}
+
 export const getContractABI = (contractFile: string): ContractABI[] => {
     if (!fs.existsSync(contractFile)) {
         throw new Error(`Contract file ${contractFile} does not exist.`);

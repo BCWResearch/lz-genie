@@ -6,16 +6,11 @@ import { DeployUtils } from '../../utils/deploy';
 import { retrieveDeployedContracts, getContractABI, filterFunctions } from '../../utils/contractUtils';
 import { HardhatTaskUtil } from '../../utils/hardhatTask';
 
-
-const defaultBackCb = () => {
-    return InquirerUtils.handlePrompt(tasks.default);
-}
-
 export default {
     tag: 'interact.proj',
     description: 'Interact with an Existing Project',
     run: async (_backCb: Function) => {
-        _backCb = _backCb || defaultBackCb;
+        _backCb = _backCb || InquirerUtils.defaultBackCb;
         const cwd = process.cwd();
         const hardhatConfigPath = path.join(cwd, 'hardhat.config.ts');
         if (!fs.existsSync(hardhatConfigPath)) {
