@@ -31,7 +31,15 @@ process.on('exit', async () => {
 
     if (config) {
       if (config.trackAnalytics) {
-        PostHogUtil.initialize();
+        // If user id is not set, generate a random user id, and save it to the config
+        let userId: string = config.anonymousUserId;
+        if (!userId) {
+          userId = PostHogUtil.generateRandomId();
+          createConfig({ trackAnalytics: true, anonymousUserId: userId });
+          console.log('updated config', getConfig());
+        }
+
+        PostHogUtil.initialize(userId);
       }
     } else {
       const collectAnalytics = await select({
@@ -44,8 +52,9 @@ process.on('exit', async () => {
       });
 
       if (collectAnalytics) {
-        PostHogUtil.initialize();
-        createConfig({ trackAnalytics: true });
+        const userId = PostHogUtil.generateRandomId();
+        createConfig({ trackAnalytics: true, anonymousUserId: userId });
+        PostHogUtil.initialize(userId);
       } else {
         createDefaultConfig();
       }

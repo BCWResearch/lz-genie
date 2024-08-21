@@ -4,30 +4,35 @@ import { nanoid } from 'nanoid';
 class PostHogUtil {
   private static instance: PostHog | null = null;
   private static userId: string | null = null;
+  private static sessionId: string | null = null;
 
-  public static initialize(): void {
+  public static initialize(userId: string): void {
     if (!PostHogUtil.instance) {
+      PostHogUtil.userId = userId;
       // TODO: Figure out best way to bundle api key
       PostHogUtil.instance = new PostHog(
         'phc_6usCsJGzJQdL6tf7tgmg5iwFAawypdrm2yeflksJwa4',
         { host: 'https://us.i.posthog.com', flushAt: 1, flushInterval: 0 }
       );
 
-      //   PostHogUtil.instance.debug(true);
-
       PostHogUtil.instance.on('error', (err) => {
         console.error('Error in Posthog:', err);
       });
 
       PostHogUtil.instance.on('flush', (args) => {
-        // console.log(`\n\n====> Posthog flush: ${args[0]['event']}\n\n`);
+        console.log(`\n\n====> Posthog flush:\n\n`, args);
       });
 
       // generate a random user id
-      PostHogUtil.userId = nanoid();
       console.log('User ID:', PostHogUtil.userId);
+      PostHogUtil.instance.identify({ distinctId: PostHogUtil.userId });
+      PostHogUtil.sessionId = PostHogUtil.generateRandomId();
       PostHogUtil.trackEvent('session_started');
     }
+  }
+
+  public static generateRandomId(): string {
+    return nanoid();
   }
 
   public static trackEvent(
@@ -39,13 +44,12 @@ class PostHogUtil {
         distinctId: PostHogUtil.userId,
         event: eventName,
         properties: {
-          $session_id: PostHogUtil.userId,
-          foo: 1,
-          dvn: 'yadataada',
+          $session_id: PostHogUtil.sessionId,
+          ...properties,
         },
       });
       console.log(
-        `** Tracked event ${eventName}, for userId ${PostHogUtil.userId} **`
+        `** Tracked event ${eventName}, for userId ${PostHogUtil.userId}, with sessionId ${PostHogUtil.sessionId} **`
       );
     } else {
       console.log(
@@ -75,7 +79,3 @@ class PostHogUtil {
 }
 
 export default PostHogUtil;
-
-// user sends data to posthog
-// we read the pg api
-// plug in in our dashboards
