@@ -11,7 +11,7 @@ class PostHogUtil {
       PostHogUtil.userId = userId;
       // TODO: Figure out best way to bundle api key
       PostHogUtil.instance = new PostHog(
-        'phc_6usCsJGzJQdL6tf7tgmg5iwFAawypdrm2yeflksJwa4',
+        'phc_eQBKFoUSsUfRI4vV5PCAA5sE31F6UsTj5TIq7H0Bf90',
         { host: 'https://us.i.posthog.com', flushAt: 1, flushInterval: 0 }
       );
 

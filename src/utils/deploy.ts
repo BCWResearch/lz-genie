@@ -37,8 +37,6 @@ export class DeployUtils {
           .flat(),
       });
 
-      console.log('answer', answer);
-
       if (!answer) {
         console.log('No network selected. Deployment cancelled.');
         return;
@@ -54,8 +52,6 @@ export class DeployUtils {
       commandArgs.push('lz:deploy');
       PostHogUtil.trackEvent('DEPLOY_TO_GENERIC'); // because we don't know the network
     }
-
-    console.log('commandArgs', commandArgs);
 
     const deploymentResponse = await new Promise<{
       isSuccess: boolean;
@@ -94,12 +90,6 @@ export class DeployUtils {
       });
     });
 
-    console.log(
-      'Deployment response:',
-      deploymentResponse.isSuccess,
-      deploymentResponse.msg.substring(0, 20)
-    );
-
     deploymentResponse.isSuccess
       ? PostHogUtil.trackEvent('DEPLOY_SUCCESS', {
           msg: deploymentResponse.msg,
@@ -107,6 +97,10 @@ export class DeployUtils {
       : PostHogUtil.trackEvent('DEPLOY_FAILED', {
           error: deploymentResponse.msg,
         });
+
+    deploymentResponse.isSuccess
+      ? console.log(deploymentResponse.msg)
+      : console.error(deploymentResponse.msg);
   }
 
   static async getNetworkNames(filePath: string): Promise<string[]> {
