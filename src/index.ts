@@ -7,20 +7,49 @@ import * as tasks from './tasks';
 import PostHogUtil from './utils/posthog';
 
 async function handleShutdown() {
-  //   console.log('Starting shutdown process...');
+  console.log('Exiting...');
   await PostHogUtil.shutdown();
-  //   console.log('Shutdown process complete.');
 }
 
+// 'Exit' option in the CLI
 process.on('beforeExit', async () => {
-  //   console.log('Process beforeExit event received');
   await handleShutdown();
-  //   console.log('bye after handleShutdown from beforeExit');
   process.exit(0);
 });
 
-process.on('exit', async () => {
-  console.log('Process exit event received');
+process.on('exit', async () => {});
+
+// ctrl+c
+process.on('SIGINT', async () => {
+  await handleShutdown();
+  process.exit(0);
+});
+
+// kill -9 or similar
+process.on('SIGTERM', async () => {
+  await handleShutdown();
+  process.exit(0);
+});
+
+// uncaught exceptions
+process.on('uncaughtException', async (err) => {
+  PostHogUtil.trackEvent('ERROR', {
+    type: 'uncaughtException',
+    error: `${err}`,
+  });
+  await handleShutdown();
+  process.exit(1);
+});
+
+// unhandled rejections
+process.on('unhandledRejection', async (reason, promise) => {
+  console.log('unhandledRejection', reason, promise);
+  PostHogUtil.trackEvent('ERROR', {
+    type: 'unhandledRejection',
+    error: `${reason}`,
+  });
+  await handleShutdown();
+  process.exit(1);
 });
 
 (async () => {

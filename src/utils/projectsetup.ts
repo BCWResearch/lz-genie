@@ -2,7 +2,6 @@ import { input } from '@inquirer/prompts';
 import { join } from 'path';
 import { FileCopyUtil } from './filecopy';
 import { PackageManagerUtil } from './packagemanager';
-import { PostHog } from 'posthog-node';
 import PostHogUtil from './posthog';
 
 export class ProjectSetupUtil {
@@ -49,7 +48,6 @@ export class ProjectSetupUtil {
 
   public static async createNewProject(template: string): Promise<void> {
     PostHogUtil.trackEvent(`CFT_${template}`);
-    return; // TODO: debugging only, remove this line later
     const projectName = await input({
       message: 'Enter the name of the project: ',
       // default: 'my-project'

@@ -28,7 +28,7 @@
     "@solidity-parser/parser": "^0.18.0",
     "@types/jest": "^29.5.12",
     "@typescript-eslint/parser": "^7.9.0",
-    "@typescript-eslint/typescript-estree": "^7.9.0",
+    "@typescript-eslint/typescript-estree": "^7.18.0",
     "cli-progress": "^3.12.0",
     "handlebars": "^4.7.8",
     "hardhat": "2.22.3",

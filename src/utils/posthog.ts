@@ -16,11 +16,8 @@ class PostHogUtil {
       );
 
       PostHogUtil.instance.on('error', (err) => {
-        console.error('Error in Posthog:', err);
-      });
-
-      PostHogUtil.instance.on('flush', (args) => {
-        console.log(`\n\n====> Posthog flush:\n\n`, args);
+        // TODO: Some verbose logging here
+        console.error('Error in PostHogUtil:', err);
       });
 
       // generate a random user id
@@ -48,32 +45,14 @@ class PostHogUtil {
           ...properties,
         },
       });
-      console.log(
-        `** Tracked event ${eventName}, for userId ${PostHogUtil.userId}, with sessionId ${PostHogUtil.sessionId} **`
-      );
-    } else {
-      console.log(
-        `Tried to track event ${eventName} but PostHogUtil instance is not initialized`
-      );
     }
   }
 
   public static async shutdown(): Promise<void> {
     if (PostHogUtil.instance) {
-      //   console.log('shutdown(): sending session_ended event');
       PostHogUtil.trackEvent('session_ended');
-      //   console.log(
-      //     'session_ended event sent, shutting down PostHogUtil instance'
-      //   );
-
-      //   console.log('flushing PostHogUtil instance');
-      const flushed = await PostHogUtil.instance.flush();
-      //   await new Promise((resolve) => setTimeout(resolve, 10_000));
-      //   console.log('PostHogUtil instance flushed', flushed);
-      //   console.log('shutting down PostHogUtil instance');
+      await PostHogUtil.instance.flush();
       await PostHogUtil.instance.shutdown();
-      //   await new Promise((resolve) => setTimeout(resolve, 10_000));
-      //   console.log('PostHogUtil instance shut down');
     }
   }
 }
