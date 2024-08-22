@@ -40,6 +40,7 @@ class PostHogUtil {
       PostHogUtil.instance.capture({
         distinctId: PostHogUtil.userId,
         event: eventName,
+        timestamp: new Date(),
         properties: {
           $session_id: PostHogUtil.sessionId,
           ...properties,
