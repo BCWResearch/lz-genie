@@ -1,4 +1,4 @@
-import { Project, SourceFile, ts, ObjectLiteralExpression, PropertyAssignment, ArrayLiteralExpression } from "ts-morph";
+import { Project, SourceFile, ts, ObjectLiteralExpression, PropertyAssignment, ArrayLiteralExpression, SyntaxKind, VariableDeclarationKind } from "ts-morph";
 import type { OAppEdgeConfig, OAppOmniGraphHardhat, OmniPointHardhat, Uln302ExecutorConfig } from '@layerzerolabs/toolbox-hardhat'
 import { EndpointId } from "@layerzerolabs/lz-definitions";
 
@@ -28,6 +28,7 @@ export class LayerZeroConfigManager {
     private project: Project;
     private sourceFile: SourceFile;
     private contractsCache: Contract[];
+    private oAppOmniGraphHardhat: { [key: string]: string; };
 
     constructor(filePath: string) {
         this.project = new Project({
@@ -36,6 +37,7 @@ export class LayerZeroConfigManager {
         });
         this.sourceFile = this.project.addSourceFileAtPath(filePath);
         this.contractsCache = this.cacheContracts();
+        this.oAppOmniGraphHardhat = this.cacheOmniPointHardhatObjects();
     }
 
     private handleError(message: string): never {
@@ -124,6 +126,63 @@ export class LayerZeroConfigManager {
         });
 
         return contracts;
+    }
+
+    public createContract(contractName: string) {
+        const config = this.getConfigObject();
+        const contracts = this.getArrayProperty(config, "contracts");
+
+        if (contracts && !contracts.getText().includes(contractName)) {
+            contracts.addElement(`{ contract: ${contractName} }`);
+        }
+        this.sourceFile.saveSync();
+    }
+
+    public cacheOmniPointHardhatObjects() {
+        // get variable declarations
+        const variablesWithOmniPointHardhat = this.sourceFile.getVariableDeclarations().filter(variable => {
+            const typeNode = variable.getTypeNode();
+            return typeNode && typeNode.getText() === "OmniPointHardhat";
+        });
+        return variablesWithOmniPointHardhat.map(variable => {
+            const key = variable.getName();
+            const value = variable.getInitializer()?.getText();
+            return { [key]: value };
+        }).reduce((acc, curr) => ({ ...acc, ...curr }), {});
+    }
+
+    public isOmniPointHardhatObject(name: string) {
+        return Object.keys(this.oAppOmniGraphHardhat).includes(name);
+    }
+
+    public createOmniPointHardhatObject(name: string, objectLiteralText: string) {
+        // Find the target node where the new variable will be inserted before
+        const configDeclaration = this.sourceFile.getVariableDeclaration("config");
+        if (configDeclaration) {
+            const configStatement = configDeclaration.getVariableStatement();
+            if (configStatement) {
+                const insertPosition = configStatement.getChildIndex();
+
+                // Insert the new variable statement right before the config statement
+                this.sourceFile.insertStatements(insertPosition, [
+                    `const ${name}: OmniPointHardhat = ${objectLiteralText};`
+                ]);
+
+                // Save the updated source file
+                this.sourceFile.saveSync();
+
+                // Update cached OmniPointHardhat objects
+                this.oAppOmniGraphHardhat = this.cacheOmniPointHardhatObjects();
+            }
+        }
+    }
+
+    public deleteOmniPointHardhatObject(name: string) {
+        const variableDeclaration = this.sourceFile.getVariableDeclaration(name);
+        if (variableDeclaration) {
+            variableDeclaration.remove();
+            this.sourceFile.saveSync();
+        }
     }
 
     public listContracts(): Contract[] {

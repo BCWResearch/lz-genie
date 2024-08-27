@@ -4,6 +4,8 @@ import * as path from 'path';
 import PostHogUtil from './posthog';
 import { parse } from '@typescript-eslint/typescript-estree';
 import select from '@inquirer/select';
+import { LayerZeroConfigManager } from './lzConfigManager';
+import { DVNUtils } from './dvn';
 
 export class DeployUtils {
   static async deployProject() {
@@ -18,12 +20,14 @@ export class DeployUtils {
     const commandArgs = ['hardhat'];
 
     // get network names
-    const networks = await DeployUtils.getNetworkNames(
+    const networksOrig = await DeployUtils.getNetworkNames(
       path.join(cwd, 'hardhat.config.ts')
     );
 
+    const networks = Object.keys(networksOrig);
+    var answer = undefined;
     if (networks && networks.length) {
-      const answer = await select({
+      answer = await select({
         message: 'Which Network do you want to deploy to?\n',
         choices: networks
           .map((name, idx) => {
@@ -92,15 +96,38 @@ export class DeployUtils {
 
     deploymentResponse.isSuccess
       ? PostHogUtil.trackEvent('DEPLOY_SUCCESS', {
-          msg: deploymentResponse.msg,
-        })
+        msg: deploymentResponse.msg,
+      })
       : PostHogUtil.trackEvent('DEPLOY_FAILED', {
-          error: deploymentResponse.msg,
-        });
+        error: deploymentResponse.msg,
+      });
 
     deploymentResponse.isSuccess
       ? console.log(deploymentResponse.msg)
       : console.error(deploymentResponse.msg);
+
+    if (deploymentResponse.isSuccess) {
+      const configFilePath = path.join(cwd, 'layerzero.config.ts');
+      if (!fs.existsSync(configFilePath)) {
+        console.warn('Not a LayerZero project.');
+        return;
+      }
+      const manager = new LayerZeroConfigManager(configFilePath);
+      const omniPointhardhatVarName = `${answer}Contract`;
+      if (manager.isOmniPointHardhatObject(omniPointhardhatVarName)) {
+        console.debug('omni point hardhat object already exists');
+      } else {
+        const omniPointhardhatVarValue = `{
+    eid: ${networksOrig[answer]},
+    contractName: contractName,
+  }`;
+        manager.createOmniPointHardhatObject(omniPointhardhatVarName,
+          omniPointhardhatVarValue
+        );
+      }
+      manager.createContract(omniPointhardhatVarName);
+      await DVNUtils.configureDVN(0);
+    }
   }
 
   static async getNetworkNames(filePath: string): Promise<string[]> {
@@ -137,11 +164,16 @@ export class DeployUtils {
       // Extract and return the network names
       const networkNames = networksNode.value.properties.map((network) => {
         if (network.type === 'Property' && network.key.type === 'Identifier') {
-          return network.key.name;
+          return {
+            [network.key.name]: `${network.value.properties[0].value.object.name}.${network.value.properties[0].value.property.name}`,
+          }
         }
-      });
+      }).reduce((acc, curr) => {
+        return { ...acc, ...curr }
+      }, {});
 
-      return networkNames.filter(Boolean) as string[];
+      return networkNames;
+      //.filter(Boolean) as string[];
     } catch (error) {
       return [];
     }

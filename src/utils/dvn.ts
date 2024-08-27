@@ -6,7 +6,7 @@ import { DVNS } from '../dvn-definitions';
 import { InquirerUtils } from './inquirer';
 
 export class DVNUtils {
-    static async configureDVN() {
+    static async configureDVN(index?: number) {
         const cwd = process.cwd();
         const configFilePath = path.join(cwd, 'layerzero.config.ts');
         if (!fs.existsSync(configFilePath)) {
@@ -36,7 +36,9 @@ export class DVNUtils {
             }
             return 0;
         });
-        const selectedDvn = await InquirerUtils.handlePrompt(availableDvns,);
+        const selectedDvn = !isNaN(index)
+            ? availableDvns[index].tag
+            : await InquirerUtils.handlePrompt(availableDvns,);
 
         if (!selectedDvn) {
             return;
@@ -72,7 +74,7 @@ export class DVNUtils {
             stdio: 'inherit',
             shell: true
         };
-        const deployProcess = spawn('npx', ['hardhat', 'lzgenie:configure:dvn'], options);
+        const deployProcess = spawn('npx', ['hardhat', 'lz:oapp:wire', '--oapp-config layerzero.config.ts'], options);
         deployProcess.on('exit', (code) => {
             console.log(`child process exited with code ${code}`);
         });
