@@ -11,6 +11,7 @@ import {
 import { HardhatTaskUtil } from '../../utils/hardhatTask';
 import { PostHog } from 'posthog-node';
 import PostHogUtil from '../../utils/posthog';
+import { HardhatConfigParser } from '../../utils/hardhatConfigParser';
 
 export default {
   tag: 'interact.proj',
@@ -19,7 +20,7 @@ export default {
     PostHogUtil.trackEvent('INTERACT_PROJECT');
     _backCb = _backCb || InquirerUtils.defaultBackCb;
     const cwd = process.cwd();
-    const hardhatConfigPath = path.join(cwd, 'hardhat.config.ts');
+    const hardhatConfigPath = HardhatConfigParser.getDefaultConfigPath();
     if (!fs.existsSync(hardhatConfigPath)) {
       console.error('Not a Hardhat project. Exiting...');
       return;

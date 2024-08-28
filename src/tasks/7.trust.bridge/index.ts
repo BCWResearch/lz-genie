@@ -8,14 +8,15 @@ import {
   retrieveDeployedContracts,
 } from '../../utils/contractUtils';
 import PostHogUtil from '../../utils/posthog';
+import { PromiseResult } from '../../interfaces';
+import { LayerZeroConfigManager } from '../../utils/lzConfigManager';
 export default {
   tag: 'trust.bridge',
   description: 'Bridge Trust Between Contracts',
   run: async (_backCb: Function) => {
     PostHogUtil.trackEvent('TRUST_BRIDGE');
-    const cwd = process.cwd();
 
-    const configFilePath = path.join(cwd, 'layerzero.config.ts');
+    const configFilePath = LayerZeroConfigManager.getDefaultLzConfigPath();
 
     if (!fs.existsSync(configFilePath)) {
       console.error('Not a LayerZero project. Exiting...');
@@ -88,7 +89,27 @@ export default {
       return;
     }
     for (const [sourceNetwork, targetNetwork] of answer) {
-      await setTrustBridge(selectedContract, sourceNetwork, targetNetwork);
+      PostHogUtil.trackEvent(`TRUST_BRIDGE_${sourceNetwork}_${targetNetwork}`, {
+        sourceNetwork,
+        targetNetwork,
+        contract: selectedContract,
+      });
+      const resp = await setTrustBridge(
+        selectedContract,
+        sourceNetwork,
+        targetNetwork
+      );
+
+      console.log('RESPONSE');
+      console.log(resp);
+
+      if (resp.isSuccess) {
+        PostHogUtil.trackEvent('TRUST_BRIDGE_SUCCESS', { msg: resp.msg });
+        console.log(resp.msg);
+      } else {
+        PostHogUtil.trackEvent('TRUST_BRIDGE_FAILURE', { error: resp.msg });
+        console.error(resp.msg);
+      }
     }
   },
 };
@@ -98,13 +119,14 @@ const setTrustBridge = async (
   sourceNetwork: string,
   targetNetwork: string
 ) => {
-  return new Promise((resolve, reject) => {
+  return new Promise<PromiseResult>((resolve, reject) => {
     const cwd = process.cwd();
     const options: SpawnOptions = {
       cwd,
-      stdio: 'inherit',
+      stdio: 'pipe',
       shell: true,
     };
+
     const bridgeProcess = spawn(
       'npx',
       [
@@ -117,19 +139,35 @@ const setTrustBridge = async (
       ],
       options
     );
-    bridgeProcess.on('exit', (code) => {
-      if (code === 0) {
-        resolve(code);
-      } else {
-        reject(code);
-      }
-      console.log(
-        `Bridge Trust of ${contract} from ${sourceNetwork} to ${targetNetwork} exited with code ${code}`
-      );
+
+    let output = '';
+    let errorOutput = '';
+
+    // Capture standard output (stdout)
+    bridgeProcess.stdout.on('data', (data) => {
+      output += data.toString();
     });
+
+    // Capture error output (stderr)
+    bridgeProcess.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+
     bridgeProcess.on('error', (err) => {
-      console.error(err);
-      reject(err);
+      resolve({
+        isSuccess: false,
+        msg: `Bridge trust of ${contract} from ${sourceNetwork} to ${targetNetwork} failed due to error: ${err.message}. Error: ${errorOutput}`,
+      });
+    });
+
+    bridgeProcess.on('exit', (code) => {
+      resolve({
+        isSuccess: code === 0,
+        msg:
+          code === 0
+            ? `Bridge process successful. Details: ${output}`
+            : `Bridge process failed. Error: ${errorOutput}`,
+      });
     });
   });
 };

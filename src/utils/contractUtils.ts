@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ContractABI } from '../interfaces';
+import { HardhatConfigParser } from './hardhatConfigParser';
 
 export const retrieveDeployedContracts = (contract: string): Record<string, string> => {
     const cwd = process.cwd();
@@ -27,7 +28,7 @@ export const retrieveDeployedContracts = (contract: string): Record<string, stri
 
 export const getContracts = (): string[] => {
     const cwd = process.cwd();
-    const hardhatConfigPath = path.join(cwd, 'hardhat.config.ts');
+    const hardhatConfigPath = HardhatConfigParser.getDefaultConfigPath();
     if (!fs.existsSync(hardhatConfigPath)) {
         console.error('Not a Hardhat project. Exiting...');
         return;

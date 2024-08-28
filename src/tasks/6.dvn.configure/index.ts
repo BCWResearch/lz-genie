@@ -6,7 +6,6 @@ export default {
   tag: 'dvn.configure',
   description: 'Configuration',
   run: async (_backCb: Function) => {
-    PostHogUtil.trackEvent('DVN_CONFIGURE');
     InquirerUtils.handlePrompt({
       configure: {
         description: 'Configure DVNs',
