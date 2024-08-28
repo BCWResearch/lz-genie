@@ -6,6 +6,8 @@ import { InquirerUtils } from './utils/inquirer';
 import * as tasks from './tasks';
 import PostHogUtil from './utils/posthog';
 
+process.chdir('/home/syed/lztest/oftE2E');
+
 async function handleShutdown() {
   console.log('Exiting...');
   await PostHogUtil.shutdown();

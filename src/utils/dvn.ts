@@ -5,11 +5,11 @@ import { LayerZeroConfigManager } from './lzConfigManager';
 import { DVNS } from '../dvn-definitions';
 import { InquirerUtils } from './inquirer';
 import PostHogUtil from './posthog';
+import { LAYER_ZERO_CONFIG_FILE_NAME } from '../constants';
 
 export class DVNUtils {
   static async configureDVN(index?: number) {
-    const cwd = process.cwd();
-    const configFilePath = path.join(cwd, 'layerzero.config.ts');
+    const configFilePath = LayerZeroConfigManager.getDefaultLzConfigPath();
     if (!fs.existsSync(configFilePath)) {
       console.error('Not a LayerZero project. Exiting...');
       return;
@@ -94,7 +94,7 @@ export class DVNUtils {
     };
     const deployProcess = spawn(
       'npx',
-      ['hardhat', 'lz:oapp:wire', '--oapp-config layerzero.config.ts'],
+      ['hardhat', 'lz:oapp:wire', `--oapp-config ${LAYER_ZERO_CONFIG_FILE_NAME}`],
       options
     );
     deployProcess.on('exit', (code) => {

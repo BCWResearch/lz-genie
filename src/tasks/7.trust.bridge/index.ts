@@ -9,14 +9,14 @@ import {
 } from '../../utils/contractUtils';
 import PostHogUtil from '../../utils/posthog';
 import { PromiseResult } from '../../interfaces';
+import { LayerZeroConfigManager } from '../../utils/lzConfigManager';
 export default {
   tag: 'trust.bridge',
   description: 'Bridge Trust Between Contracts',
   run: async (_backCb: Function) => {
     PostHogUtil.trackEvent('TRUST_BRIDGE');
-    const cwd = process.cwd();
 
-    const configFilePath = path.join(cwd, 'layerzero.config.ts');
+    const configFilePath = LayerZeroConfigManager.getDefaultLzConfigPath();
 
     if (!fs.existsSync(configFilePath)) {
       console.error('Not a LayerZero project. Exiting...');

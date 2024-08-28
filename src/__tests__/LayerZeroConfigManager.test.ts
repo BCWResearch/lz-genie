@@ -2,9 +2,10 @@ import { LayerZeroConfigManager } from '../utils/lzConfigManager';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { LAYER_ZERO_CONFIG_FILE_NAME } from '../constants';
 
 const tempDir = os.tmpdir();
-const configFilePath = path.join(tempDir, 'layerzero.config.ts');
+const configFilePath = path.join(tempDir, LAYER_ZERO_CONFIG_FILE_NAME);
 
 const mockConfigContent = `
 import { EndpointId } from '@layerzerolabs/lz-definitions'
