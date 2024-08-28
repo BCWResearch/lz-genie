@@ -2,6 +2,7 @@ import { task } from 'hardhat/config'
 import { getEidsByNetworkName } from './utils/network'
 import { DeployUtils } from '../utils/deploy';
 import '@nomiclabs/hardhat-ethers';
+import { ethers } from 'hardhat';
 
 
 task('lzgenie:configure:dvn', 'Setup DVN', async (_, hre) => {
@@ -59,18 +60,19 @@ task('lzgenie:configure:trust', 'Setup Trust', async (params: { [key: string]: s
             console.log("*source already set*")
         }
     } else if (contractInstance.setPeer) {
-        console.log('Setting up trust bridge using setPeer')
-        const isPeerSet = await contractInstance.isPeer(remoteChainId, remoteAndLocal);
+        console.log('Setting up trust bridge using setPeer');
+        const paddedtarget = ethers.utils.zeroPad(contracts[contract][target], 32);
+        const isPeerSet = await contractInstance.isPeer(remoteChainId, paddedtarget);
         if (!isPeerSet) {
             try {
-                let tx = await (await contractInstance.setPeer(remoteChainId, remoteAndLocal)).wait()
-                console.log(`✅ [${hre.network.name}] setPeer(${remoteChainId}, ${remoteAndLocal})`)
+                let tx = await (await contractInstance.setPeer(remoteChainId, paddedtarget)).wait()
+                console.log(`✅ [${hre.network.name}] setPeer(${remoteChainId}, ${paddedtarget})`)
                 console.log(` tx: ${tx.transactionHash}`)
             } catch (e) {
                 if (e.error.message.includes("The chainId + address is already trusted")) {
                     console.log("*source already set*")
                 } else {
-                    console.log(`❌ [${hre.network.name}] setPeer(${remoteChainId}, ${remoteAndLocal})`)
+                    console.log(`❌ [${hre.network.name}] setPeer(${remoteChainId}, ${paddedtarget})`)
                 }
             }
         } else {
