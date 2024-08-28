@@ -10,6 +10,7 @@
     "lzgenie": "bin/src/index.js"
   },
   "scripts": {
+    "prepublishOnly": "yarn && yarn build",
     "postinstall": "npm run build",
     "start": "ts-node src/index.ts",
     "build": "rm -rf bin && tsc && chmod -R 755 bin && cp -r projects bin/projects",
