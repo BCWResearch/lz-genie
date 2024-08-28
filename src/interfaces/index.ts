@@ -10,3 +10,4 @@
 
 export * from './solidityEditor';
 export * from './contractAbi';
+export * from './misc';

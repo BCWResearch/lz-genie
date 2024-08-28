@@ -6,6 +6,7 @@ import { parse } from '@typescript-eslint/typescript-estree';
 import select from '@inquirer/select';
 import { LayerZeroConfigManager } from './lzConfigManager';
 import { DVNUtils } from './dvn';
+import { PromiseResult } from '../interfaces';
 
 export class DeployUtils {
   static async deployProject() {
@@ -57,50 +58,49 @@ export class DeployUtils {
       PostHogUtil.trackEvent('DEPLOY_TO_GENERIC'); // because we don't know the network
     }
 
-    const deploymentResponse = await new Promise<{
-      isSuccess: boolean;
-      msg: string;
-    }>((resolve, reject) => {
-      const deployProcess = spawn('npx', commandArgs, options);
+    const deploymentResponse = await new Promise<PromiseResult>(
+      (resolve, reject) => {
+        const deployProcess = spawn('npx', commandArgs, options);
 
-      let output = '';
-      let errorOutput = '';
+        let output = '';
+        let errorOutput = '';
 
-      // Capture standard output (stdout)
-      deployProcess.stdout.on('data', (data) => {
-        output += data.toString();
-      });
-
-      // Capture error output (stderr)
-      deployProcess.stderr.on('data', (data) => {
-        errorOutput += data.toString();
-      });
-
-      deployProcess.on('error', (err) => {
-        resolve({
-          isSuccess: false,
-          msg: `Deployment failed due to error: ${err.message}. Error: ${errorOutput}`,
+        // Capture standard output (stdout)
+        deployProcess.stdout.on('data', (data) => {
+          output += data.toString();
         });
-      });
 
-      deployProcess.on('exit', (code) => {
-        resolve({
-          isSuccess: code === 0,
-          msg:
-            code === 0
-              ? `Deployment successful. Details: ${output}`
-              : `Deployment failed. Error: ${errorOutput}`,
+        // Capture error output (stderr)
+        deployProcess.stderr.on('data', (data) => {
+          errorOutput += data.toString();
         });
-      });
-    });
+
+        deployProcess.on('error', (err) => {
+          resolve({
+            isSuccess: false,
+            msg: `Deployment failed due to error: ${err.message}. Error: ${errorOutput}`,
+          });
+        });
+
+        deployProcess.on('exit', (code) => {
+          resolve({
+            isSuccess: code === 0,
+            msg:
+              code === 0
+                ? `Deployment successful. Details: ${output}`
+                : `Deployment failed. Error: ${errorOutput}`,
+          });
+        });
+      }
+    );
 
     deploymentResponse.isSuccess
       ? PostHogUtil.trackEvent('DEPLOY_SUCCESS', {
-        msg: deploymentResponse.msg,
-      })
+          msg: deploymentResponse.msg,
+        })
       : PostHogUtil.trackEvent('DEPLOY_FAILED', {
-        error: deploymentResponse.msg,
-      });
+          error: deploymentResponse.msg,
+        });
 
     deploymentResponse.isSuccess
       ? console.log(deploymentResponse.msg)
@@ -121,7 +121,8 @@ export class DeployUtils {
     eid: ${networksOrig[answer]},
     contractName: contractName,
   }`;
-        manager.createOmniPointHardhatObject(omniPointhardhatVarName,
+        manager.createOmniPointHardhatObject(
+          omniPointhardhatVarName,
           omniPointhardhatVarValue
         );
       }
@@ -162,15 +163,21 @@ export class DeployUtils {
       }
 
       // Extract and return the network names
-      const networkNames = networksNode.value.properties.map((network) => {
-        if (network.type === 'Property' && network.key.type === 'Identifier') {
-          return {
-            [network.key.name]: `${network.value.properties[0].value.object.name}.${network.value.properties[0].value.property.name}`,
+      const networkNames = networksNode.value.properties
+        .map((network) => {
+          if (
+            network.type === 'Property' &&
+            network.key.type === 'Identifier'
+          ) {
+            return {
+              [network.key.name]:
+                `${network.value.properties[0].value.object.name}.${network.value.properties[0].value.property.name}`,
+            };
           }
-        }
-      }).reduce((acc, curr) => {
-        return { ...acc, ...curr }
-      }, {});
+        })
+        .reduce((acc, curr) => {
+          return { ...acc, ...curr };
+        }, {});
 
       return networkNames;
       //.filter(Boolean) as string[];

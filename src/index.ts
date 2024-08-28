@@ -56,7 +56,6 @@ process.on('unhandledRejection', async (reason, promise) => {
   printLogo();
   try {
     const config = getConfig();
-    console.log('config', config);
 
     if (config) {
       if (config.trackAnalytics) {
