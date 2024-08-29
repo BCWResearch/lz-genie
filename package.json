@@ -1,6 +1,6 @@
 {
   "name": "lzgenie",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A set of boilerplate, scaffolding and ready to use tools to get a dev up and running quickly on l0 usecases",
   "submodules": [
     "solidity-examples"
