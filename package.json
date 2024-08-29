@@ -1,6 +1,6 @@
 {
   "name": "lzgenie",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A set of boilerplate, scaffolding and ready to use tools to get a dev up and running quickly on l0 usecases",
   "submodules": [
     "solidity-examples"
@@ -10,6 +10,7 @@
     "lzgenie": "bin/src/index.js"
   },
   "scripts": {
+    "prepublishOnly": "yarn && yarn build",
     "postinstall": "npm run build",
     "start": "ts-node src/index.ts",
     "build": "rm -rf bin && tsc && chmod -R 755 bin && cp -r projects bin/projects",
