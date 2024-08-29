@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "target": "ESNext",
     "module": "commonjs",
     "moduleResolution": "node",
@@ -23,11 +21,10 @@
     "noImplicitThis": false,
     "resolveJsonModule": true,
     "strictNullChecks": false,
-    "skipLibCheck": true,
+    "skipLibCheck": true
     // "declaration": true,
     // "declarationMap": true,
   },
-  "exclude": [
-    "projects"
-  ]
+  "exclude": ["projects"],
+  "include": ["src/**/*.ts", "package.json"]
 }

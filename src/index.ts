@@ -5,9 +5,14 @@ import { printLogo } from './logo';
 import { InquirerUtils } from './utils/inquirer';
 import * as tasks from './tasks';
 import PostHogUtil from './utils/posthog';
+import * as fs from 'fs';
+import * as path from 'path';
+import logger from './utils/logger';
+const { execSync } = require('child_process');
+const checkForUpdate = require('update-check');
 
 async function handleShutdown() {
-  console.log('Exiting...');
+  logger.log('\nExiting...');
   await PostHogUtil.shutdown();
 }
 
@@ -43,7 +48,7 @@ process.on('uncaughtException', async (err) => {
 
 // unhandled rejections
 process.on('unhandledRejection', async (reason, promise) => {
-  console.log('unhandledRejection', reason, promise);
+  logger.verbose('unhandledRejection', reason, promise);
   PostHogUtil.trackEvent('ERROR', {
     type: 'unhandledRejection',
     error: `${reason}`,
@@ -52,10 +57,38 @@ process.on('unhandledRejection', async (reason, promise) => {
   process.exit(1);
 });
 
-(async () => {
-  printLogo();
+async function checkForUpdates(pkg: Object) {
   try {
-    const config = getConfig();
+    logger.log('Checking for updates...');
+    const update = await checkForUpdate(pkg, { interval: 0 }); // 1 day
+
+    if (update) {
+      logger.log(
+        `A new version (${update.latest}) is available!. Downloading...`
+      );
+      execSync(`npm install -g ${pkg['name']}@${update.latest}`, {
+        stdio: 'inherit',
+      });
+      logger.log('Update completed. Please restart the CLI.');
+      process.exit(0);
+    }
+    logger.log('You are using the latest version of the application.');
+  } catch (error) {
+    logger.error('Failed to check for updates:', error);
+    logger.error('Please check for and install updates manually.');
+    process.exit(1);
+  }
+}
+
+(async () => {
+  try {
+    const packageJsonPath = path.resolve(__dirname, '../package.json');
+    const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+
+    printLogo(pkg?.version);
+
+    let config = getConfig();
+    logger.verbose(config);
 
     if (config) {
       if (config.trackAnalytics) {
@@ -64,7 +97,6 @@ process.on('unhandledRejection', async (reason, promise) => {
         if (!userId) {
           userId = PostHogUtil.generateRandomId();
           createConfig({ trackAnalytics: true, anonymousUserId: userId });
-          console.log('updated config', getConfig());
         }
 
         PostHogUtil.initialize(userId);
@@ -86,6 +118,28 @@ process.on('unhandledRejection', async (reason, promise) => {
       } else {
         createDefaultConfig();
       }
+    }
+
+    config = getConfig(); // reload config
+
+    if (config.autoUpdate === undefined || config.autoUpdate === null) {
+      const autoUpdate = await select({
+        message: 'Enable auto-updates?',
+        choices: [
+          { value: true, name: 'Yes' },
+          { value: false, name: 'No' },
+        ],
+      });
+
+      createConfig({ ...config, autoUpdate });
+    }
+
+    config = getConfig(); // reload config
+
+    logger.verbose(config);
+
+    if (config.autoUpdate) {
+      await checkForUpdates(pkg);
     }
 
     await InquirerUtils.handlePrompt(tasks.default);

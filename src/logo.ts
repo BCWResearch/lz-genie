@@ -1,6 +1,6 @@
 // import chalk from 'chalk';
 
-export const printLogo = () => {
+export const printLogo = (version?: string | number) => {
     // change the color of the logo to #a77dff
     const hex = 'A77DFF';
 
@@ -17,7 +17,7 @@ export const printLogo = () => {
     console.log(clr(` ██║       ███╔╝    ██║  ███╗█████╗  ██╔██╗ ██║██║█████╗  `));
     console.log(clr(` ██║      ███╔╝     ██║   ██║██╔══╝  ██║╚██╗██║██║██╔══╝  `));
     console.log(clr(` ███████╗███████╗   ╚██████╔╝███████╗██║ ╚████║██║███████╗`));
-    console.log(clr(` ╚══════╝╚══════╝    ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚═╝╚══════╝`));
+    console.log(clr(` ╚══════╝╚══════╝    ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚═╝╚══════╝ ${version ? `v${version}` : ''}`));
     console.log(clr(``));
 
 }
