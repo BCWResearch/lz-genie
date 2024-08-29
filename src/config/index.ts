@@ -8,6 +8,7 @@ interface IConfigData {
   trackAnalytics: boolean;
   anonymousUserId?: string;
   autoUpdate?: boolean;
+  lastUpdateCheck?: number;
 }
 
 const defaultConfig: IConfigData = {

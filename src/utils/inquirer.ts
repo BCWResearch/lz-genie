@@ -60,7 +60,7 @@ export class InquirerUtils {
     }
     if (answer === 'exit') {
       if (exit) {
-        logger.log('\nExiting...');
+        logger.log('Exiting...');
         await PostHogUtil.shutdown();
         process.exit(0);
       }

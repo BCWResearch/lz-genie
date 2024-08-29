@@ -1,6 +1,11 @@
 #! /usr/bin/env node
 import { select } from '@inquirer/prompts';
-import { createConfig, createDefaultConfig, getConfig } from './config';
+import {
+  createConfig,
+  createDefaultConfig,
+  getConfig,
+  IConfigData,
+} from './config';
 import { printLogo } from './logo';
 import { InquirerUtils } from './utils/inquirer';
 import * as tasks from './tasks';
@@ -12,7 +17,7 @@ const { execSync } = require('child_process');
 const checkForUpdate = require('update-check');
 
 async function handleShutdown() {
-  logger.log('\nExiting...');
+  logger.log('Exiting...');
   await PostHogUtil.shutdown();
 }
 
@@ -57,10 +62,22 @@ process.on('unhandledRejection', async (reason, promise) => {
   process.exit(1);
 });
 
-async function checkForUpdates(pkg: Object) {
+async function checkForUpdates(pkg: Object, config: IConfigData) {
   try {
+    // if last update was checked less than 1 day ago, skip
+    if (config?.lastUpdateCheck) {
+      const lastUpdateCheck = config.lastUpdateCheck;
+      const oneDay = 24 * 60 * 60 * 1000;
+      if (Date.now() - lastUpdateCheck < oneDay) {
+        logger.log(
+          'Not checking for updates since last check was less than a day ago.'
+        );
+        return;
+      }
+    }
+
     logger.log('Checking for updates...');
-    const update = await checkForUpdate(pkg, { interval: 0 }); // 1 day
+    const update = await checkForUpdate(pkg, { interval: 0 });
 
     if (update) {
       logger.log(
@@ -70,9 +87,11 @@ async function checkForUpdates(pkg: Object) {
         stdio: 'inherit',
       });
       logger.log('Update completed. Please restart the CLI.');
+      createConfig({ ...config, lastUpdateCheck: Date.now() });
       process.exit(0);
     }
     logger.log('You are using the latest version of the application.');
+    createConfig({ ...config, lastUpdateCheck: Date.now() });
   } catch (error) {
     logger.error('Failed to check for updates:', error);
     logger.error('Please check for and install updates manually.');
@@ -139,7 +158,7 @@ async function checkForUpdates(pkg: Object) {
     logger.verbose(config);
 
     if (config.autoUpdate) {
-      await checkForUpdates(pkg);
+      await checkForUpdates(pkg, config);
     }
 
     await InquirerUtils.handlePrompt(tasks.default);

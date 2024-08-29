@@ -3,11 +3,11 @@ import { getConfig, IConfigData } from '../config';
 
 class Logger {
   log(...message): void {
-    console.log(...message);
+    console.log('> ', ...message);
   }
 
   error(...message): void {
-    console.error(...message);
+    console.error('> ', ...message);
   }
 
   // Verbose log method, logs only if config.verbose is true
