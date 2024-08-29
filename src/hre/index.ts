@@ -2,8 +2,7 @@ import { task } from 'hardhat/config'
 import { getEidsByNetworkName } from './utils/network'
 import { DeployUtils } from '../utils/deploy';
 import '@nomiclabs/hardhat-ethers';
-import { ethers } from 'hardhat';
-
+import { ethers } from 'ethers';
 
 task('lzgenie:configure:dvn', 'Setup DVN', async (_, hre) => {
     // compile contracts first
