@@ -1,5 +1,6 @@
 import { PostHog } from 'posthog-node';
 import { nanoid } from 'nanoid';
+import logger from './logger';
 
 class PostHogUtil {
   private static instance: PostHog | null = null;
@@ -9,21 +10,20 @@ class PostHogUtil {
   public static initialize(userId: string): void {
     if (!PostHogUtil.instance) {
       PostHogUtil.userId = userId;
-      // TODO: Figure out best way to bundle api key
       PostHogUtil.instance = new PostHog(
         'phc_eQBKFoUSsUfRI4vV5PCAA5sE31F6UsTj5TIq7H0Bf90',
         { host: 'https://us.i.posthog.com', flushAt: 1, flushInterval: 0 }
       );
 
       PostHogUtil.instance.on('error', (err) => {
-        // TODO: Some verbose logging here
-        console.error('Error in PostHogUtil:', err);
+        logger.verbose('Error in PostHogUtil:', err);
       });
 
-      // generate a random user id
-      console.log('User ID:', PostHogUtil.userId);
       PostHogUtil.instance.identify({ distinctId: PostHogUtil.userId });
       PostHogUtil.sessionId = PostHogUtil.generateRandomId();
+      logger.verbose(
+        `User id: ${PostHogUtil.userId}, session id: ${PostHogUtil.sessionId}`
+      );
       PostHogUtil.trackEvent('session_started');
     }
   }

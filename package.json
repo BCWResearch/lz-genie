@@ -1,6 +1,6 @@
 {
   "name": "lzgenie",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A set of boilerplate, scaffolding and ready to use tools to get a dev up and running quickly on l0 usecases",
   "submodules": [
     "solidity-examples"
@@ -48,7 +48,8 @@
     "submodules-install": "^1.1.0",
     "ts-jest": "^29.1.2",
     "ts-morph": "^22.0.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "update-check": "^1.5.4"
   },
   "devDependencies": {
     "mock-fs": "^5.2.0"

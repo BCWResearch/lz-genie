@@ -3,6 +3,7 @@ import checkbox from '@inquirer/checkbox';
 import { Separator } from '@inquirer/core';
 import * as tasks from '../tasks';
 import PostHogUtil from './posthog';
+import logger from './logger';
 
 export class InquirerUtils {
   public static async handlePrompt(
@@ -59,9 +60,8 @@ export class InquirerUtils {
     }
     if (answer === 'exit') {
       if (exit) {
-        console.log('shutting down posthog session');
+        logger.log('Exiting...');
         await PostHogUtil.shutdown();
-        console.log('posthog session shut down');
         process.exit(0);
       }
     }
