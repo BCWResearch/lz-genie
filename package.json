@@ -1,6 +1,6 @@
 {
   "name": "lzgenie",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "A set of boilerplate, scaffolding and ready to use tools to get a dev up and running quickly on l0 usecases",
   "submodules": [
     "solidity-examples"
@@ -22,7 +22,7 @@
   "license": "ISC",
   "dependencies": {
     "@inquirer/prompts": "^4.3.0",
-    "@layerzerolabs/lz-definitions": "^2.3.7",
+    "@layerzerolabs/lz-definitions": "^2.3.40",
     "@layerzerolabs/toolbox-hardhat": "~0.2.21",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
