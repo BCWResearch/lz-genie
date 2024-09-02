@@ -26,5 +26,5 @@
     // "declarationMap": true,
   },
   "exclude": ["projects"],
-  "include": ["src/**/*.ts", "package.json"]
+  "include": ["src/**/*.ts", "package.json", "src/dvn-definitions/dvn-deployments.json"]
 }
