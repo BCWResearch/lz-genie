@@ -1,6 +1,3 @@
-// Assuming you have a config module with a getConfig method
-import { getConfig, IConfigData } from '../config';
-
 class Logger {
   log(...message): void {
     console.log('> ', ...message);
@@ -10,9 +7,9 @@ class Logger {
     console.error('> ', ...message);
   }
 
-  // Verbose log method, logs only if config.verbose is true
+  // Verbose log method, logs only if using in dev mode
   verbose(...message): void {
-    if (process.env.LZGENIE_VERBOSE === '1') {
+    if (process.env.LZ_GENIE_DEV_MODE === '1') {
       console.log('> ', ...message);
     }
   }

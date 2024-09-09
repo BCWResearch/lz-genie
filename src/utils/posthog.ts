@@ -19,7 +19,12 @@ class PostHogUtil {
         logger.verbose('Error in PostHogUtil:', err);
       });
 
-      PostHogUtil.instance.identify({ distinctId: PostHogUtil.userId });
+      PostHogUtil.instance.identify({
+        distinctId: PostHogUtil.userId,
+        properties: {
+          isDev: process.env.LZ_GENIE_DEV_MODE === '1',
+        },
+      });
       PostHogUtil.sessionId = PostHogUtil.generateRandomId();
       logger.verbose(
         `User id: ${PostHogUtil.userId}, session id: ${PostHogUtil.sessionId}`
