@@ -124,6 +124,25 @@ export class DeployUtils {
       }
       manager.createContract(omniPointhardhatVarName);
       await DVNUtils.configureDVN(0);
+
+      // ask user to setup DVNs on-chain
+      const setupDVNs = await select({
+        message: 'Do you want to setup DVNs on-chain?',
+        choices: [
+          {
+            name: 'Yes',
+            value: true,
+          },
+          {
+            name: 'No',
+            value: false,
+          },
+        ],
+      });
+
+      if (setupDVNs) {
+        await DVNUtils.setDVNConfig();
+      }
     }
   }
 
