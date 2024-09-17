@@ -26,10 +26,6 @@ export class LayerZeroConfigManager {
         this.oAppOmniGraphHardhat = this.cacheOmniPointHardhatObjects();
     }
 
-    private handleError(message: string): never {
-        throw new Error(message);
-    }
-
     private getConfigObject(): ObjectLiteralExpression {
         return this.sourceFile.getVariableDeclarationOrThrow("config").getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression);
     }
@@ -46,46 +42,46 @@ export class LayerZeroConfigManager {
         return { contractName, eid };
     }
 
-    private getArrayProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): ArrayLiteralExpression {
+    private getArrayProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): ArrayLiteralExpression | undefined {
         const property = objectLiteral.getProperty(propertyName) as PropertyAssignment;
         if (!property) {
-            this.handleError(`Property ${propertyName} not found.`);
+            return undefined;
         }
         const arrayLiteral = property.getInitializerIfKind(ts.SyntaxKind.ArrayLiteralExpression);
         if (!arrayLiteral) {
-            this.handleError(`Property ${propertyName} is not an array.`);
+            return undefined;
         }
         return arrayLiteral;
     }
 
-    private getObjectProperty(_objectLiteral: ObjectLiteralExpression, propertyName: string): ObjectLiteralExpression {
+    private getObjectProperty(_objectLiteral: ObjectLiteralExpression, propertyName: string): ObjectLiteralExpression | undefined {
         const property = _objectLiteral.getProperty(propertyName) as PropertyAssignment;
         if (!property) {
-            this.handleError(`Property ${propertyName} not found.`);
+            return undefined;
         }
         const objectLiteral = property.getInitializerIfKind(ts.SyntaxKind.ObjectLiteralExpression);
         if (!objectLiteral) {
-            this.handleError(`Property ${propertyName} is not an object.`);
+            return undefined;
         }
         return objectLiteral;
     }
 
-    private getBigIntProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): bigint {
+    private getBigIntProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): bigint | undefined {
         const property = objectLiteral.getProperty(propertyName) as PropertyAssignment;
         if (!property) {
-            this.handleError(`Property ${propertyName} not found.`);
+            return undefined;
         }
         const value = property.getInitializer().getText().replace(/BigInt\(([^)]+)\)/, '$1').trim();
         if (!/^\d+$/.test(value)) {
-            this.handleError(`Invalid BigInt value for ${propertyName}: ${value}`);
+            return undefined;
         }
         return BigInt(value);
     }
 
-    private getNumberProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): number {
+    private getNumberProperty(objectLiteral: ObjectLiteralExpression, propertyName: string): number | undefined {
         const property = objectLiteral.getProperty(propertyName) as PropertyAssignment;
         if (!property) {
-            this.handleError(`Property ${propertyName} not found.`);
+            return undefined;
         }
         const value = property.getInitializer().getText().trim();
         return Number(value);
@@ -379,13 +375,14 @@ export class LayerZeroConfigManager {
                     optionalDVNs: optionalDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
                 };
             };
-            const executor = this.getObjectProperty(sendConfig, "executorConfig").getProperty("executor")?.getText() || null;
+            const executorConfig = this.getObjectProperty(sendConfig, "executorConfig");
+            const executor = executorConfig?.getProperty("executor")?.getText() || null;
             const executorAddress = null != executor ? executor.substring(executor.indexOf("'") + 1, executor.lastIndexOf("'")) : null;
 
             const connectionConfig: OAppEdgeConfig = {
                 sendConfig: {
                     executorConfig: {
-                        maxMessageSize: this.getNumberProperty(this.getObjectProperty(sendConfig, "executorConfig"), "maxMessageSize"),
+                        maxMessageSize: executorConfig ? this.getNumberProperty(executorConfig, "maxMessageSize") : 0,
                         executor: executorAddress,
                     },
                     ulnConfig: {
@@ -409,8 +406,8 @@ export class LayerZeroConfigManager {
             };
 
             return {
-                from: ophDefault,
-                to: ophDefault,
+                from: this.contractsCache.find(c => c.contractName === from) as unknown as OmniPointHardhat,
+                to: this.contractsCache.find(c => c.contractName === to) as unknown as OmniPointHardhat,
                 config: connectionConfig
             };
         });
