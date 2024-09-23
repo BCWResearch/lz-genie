@@ -6,6 +6,8 @@ import { DVNS } from '../dvn-definitions';
 import { InquirerUtils } from './inquirer';
 import PostHogUtil from './posthog';
 import { LAYER_ZERO_CONFIG_FILE_NAME } from '../constants';
+import { Connection, Contract } from '../interfaces/lzConfigManager';
+import { PromiseResult } from '../interfaces';
 
 export class DVNUtils {
   static async configureDVN(index?: number) {
@@ -81,6 +83,7 @@ export class DVNUtils {
           );
         }
       }
+      console.log(); // appending new line after progress %
     }
     manager.saveChanges();
   }
@@ -89,16 +92,77 @@ export class DVNUtils {
     const cwd = process.cwd();
     const options: SpawnOptions = {
       cwd,
-      stdio: 'inherit',
+      stdio: 'pipe',
       shell: true,
     };
-    const deployProcess = spawn(
-      'npx',
-      ['hardhat', 'lz:oapp:wire', `--oapp-config ${LAYER_ZERO_CONFIG_FILE_NAME}`],
-      options
-    );
-    deployProcess.on('exit', (code) => {
-      console.log(`child process exited with code ${code}`);
-    });
+
+    const dvnConfig = await DVNUtils._getDVNConfig();
+    const dvnWireResponse = await new Promise<PromiseResult>(
+      (resolve, reject) => {
+        const deployProcess = spawn(
+          'npx',
+          ['hardhat', 'lz:oapp:wire', `--oapp-config ${LAYER_ZERO_CONFIG_FILE_NAME}`],
+          options
+        );
+
+        let output = '';
+        let errorOutput = '';
+
+        // Capture standard output (stdout)
+        deployProcess.stdout.on('data', (data) => {
+          output += data.toString();
+        });
+
+        // Capture error output (stderr)
+        deployProcess.stderr.on('data', (data) => {
+          errorOutput += data.toString();
+        });
+
+        deployProcess.on('error', (err) => {
+          resolve({
+            isSuccess: false,
+            msg: `DVN wiring failed due to error: ${err.message}. Error: ${errorOutput}`,
+          });
+        });
+
+        deployProcess.on('exit', (code) => {
+          resolve({
+            isSuccess: code === 0,
+            msg:
+              code === 0
+                ? `DVNWire successful. Details: ${output}`
+                : `DVNWire failed. Error: ${errorOutput}`,
+          });
+        });
+
+      });
+
+    dvnWireResponse.isSuccess
+      ? PostHogUtil.trackEvent('DVN_WIRE_SUCCESS', {
+        msg: dvnWireResponse.msg,
+        dvnConfig,
+      })
+      : PostHogUtil.trackEvent('DVN_WIRE_FAILED', {
+        error: dvnWireResponse.msg,
+        dvnConfig,
+      });
+
+    dvnWireResponse.isSuccess
+      ? console.log(dvnWireResponse.msg)
+      : console.error(dvnWireResponse.msg);
+  }
+
+  private static async _getDVNConfig(): Promise<{ contracts: Contract[], connections: Connection[], dvnConnections: Connection[] }> {
+    try {
+      const configFilePath = LayerZeroConfigManager.getDefaultLzConfigPath();
+      const manager = new LayerZeroConfigManager(configFilePath);
+      const contracts = manager.listContracts();
+      const connections = manager.listConnections();
+      const dvnConnections = manager.listDVNs();
+      return { contracts, connections, dvnConnections };
+    } catch (e) {
+      console.error(e);
+      return { contracts: [], connections: [], dvnConnections: [] };
+    }
   }
 }
