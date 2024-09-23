@@ -110,7 +110,7 @@ export class DeployUtils {
     if (deploymentResponse.isSuccess) {
 
       const updateDVNConfig = await confirm({
-        message: 'Do you want to update DVN config?',
+        message: '-> Do you want to update DVN config?',
         default: true,
       });
 
@@ -136,7 +136,7 @@ export class DeployUtils {
 
       // ask user to setup DVNs on-chain
       const setupDVNs = await confirm({
-        message: 'Do you want to write DVNs on-chain?',
+        message: '-> Do you want to wire DVNs on-chain?',
         default: true,
       });
 
