@@ -4,6 +4,7 @@ import * as path from 'path';
 import PostHogUtil from './posthog';
 import { parse } from '@typescript-eslint/typescript-estree';
 import select from '@inquirer/select';
+import confirm from '@inquirer/confirm';
 import { LayerZeroConfigManager } from './lzConfigManager';
 import { DVNUtils } from './dvn';
 import { PromiseResult } from '../interfaces';
@@ -107,6 +108,16 @@ export class DeployUtils {
       : console.error(deploymentResponse.msg);
 
     if (deploymentResponse.isSuccess) {
+
+      const updateDVNConfig = await confirm({
+        message: 'Do you want to update DVN config?',
+        default: true,
+      });
+
+      if (!updateDVNConfig) {
+        return;
+      }
+
       const configFilePath = LayerZeroConfigManager.getDefaultLzConfigPath();
       if (!fs.existsSync(configFilePath)) {
         console.warn('Not a LayerZero project.');
@@ -114,9 +125,7 @@ export class DeployUtils {
       }
       const manager = new LayerZeroConfigManager(configFilePath);
       const omniPointhardhatVarName = `${answer}Contract`;
-      if (manager.isOmniPointHardhatObject(omniPointhardhatVarName)) {
-        console.debug('omni point hardhat object already exists');
-      } else {
+      if (!manager.isOmniPointHardhatObject(omniPointhardhatVarName)) {
         manager.createOmniPointHardhatObject(
           omniPointhardhatVarName,
           networks[answer].eid
@@ -126,18 +135,9 @@ export class DeployUtils {
       await DVNUtils.configureDVN(0);
 
       // ask user to setup DVNs on-chain
-      const setupDVNs = await select({
-        message: 'Do you want to setup DVNs on-chain?',
-        choices: [
-          {
-            name: 'Yes',
-            value: true,
-          },
-          {
-            name: 'No',
-            value: false,
-          },
-        ],
+      const setupDVNs = await confirm({
+        message: 'Do you want to write DVNs on-chain?',
+        default: true,
       });
 
       if (setupDVNs) {

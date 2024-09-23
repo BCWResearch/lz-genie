@@ -1,6 +1,6 @@
 {
   "name": "lzgenie",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "A set of boilerplate, scaffolding and ready to use tools to get a dev up and running quickly on l0 usecases",
   "submodules": [
     "solidity-examples"
@@ -13,7 +13,8 @@
     "prepublishOnly": "yarn && yarn build",
     "postinstall": "npm run build",
     "start": "ts-node src/index.ts",
-    "build": "rm -rf bin && tsc && chmod -R 755 bin && cp -r projects bin/projects",
+    "build:clean": "rm -rf bin && tsc && chmod -R 755 bin && cp -r projects bin/projects",
+    "build": "tsc",
     "install:local": "yarn build && npm install -g --force",
     "uninstall:local": "npm uninstall -g lzgenie",
     "test": "node --experimental-vm-modules node_modules/.bin/jest"
