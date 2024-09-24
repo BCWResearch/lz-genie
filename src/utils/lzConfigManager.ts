@@ -200,81 +200,86 @@ export class LayerZeroConfigManager {
     }
 
     public listDVNs(): Connection[] {
-        const config = this.getConfigObject();
-        const connections = this.getArrayProperty(config, "connections");
+        try {
+            const config = this.getConfigObject();
+            const connections = this.getArrayProperty(config, "connections");
 
-        if (!connections) {
-            console.error("Connections array not found.");
-            return [];
-        }
-
-        const connectionDVNs: Connection[] = [];
-        connections.getElements().forEach(connection => {
-            const configObject = connection.asKind(ts.SyntaxKind.ObjectLiteralExpression);
-            if (!configObject) {
-                console.error("Config object not found in connection.");
-                return;
+            if (!connections) {
+                console.error("Connections array not found.");
+                return [];
             }
 
-            // DISABLED FOR FIRST ITERATION
-            // const from = (configObject.getProperty("from") as PropertyAssignment)?.getInitializer().getText();
-            // const to = (configObject.getProperty("to") as PropertyAssignment)?.getInitializer().getText();
+            const connectionDVNs: Connection[] = [];
+            connections.getElements().forEach(connection => {
+                const configObject = connection.asKind(ts.SyntaxKind.ObjectLiteralExpression);
+                if (!configObject) {
+                    console.error("Config object not found in connection.");
+                    return;
+                }
 
-            const configProperty = configObject.getProperty("config") as PropertyAssignment | undefined;
-            if (!configProperty) {
-                connectionDVNs.push({ from: ophDefault, to: ophDefault });
-                return;
-            }
+                // DISABLED FOR FIRST ITERATION
+                // const from = (configObject.getProperty("from") as PropertyAssignment)?.getInitializer().getText();
+                // const to = (configObject.getProperty("to") as PropertyAssignment)?.getInitializer().getText();
 
-            const sendConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "sendConfig");
-            const receiveConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "receiveConfig");
+                const configProperty = configObject.getProperty("config") as PropertyAssignment | undefined;
+                if (!configProperty) {
+                    connectionDVNs.push({ from: ophDefault, to: ophDefault });
+                    return;
+                }
 
-            const extractDVNConfig = (config: ObjectLiteralExpression | undefined): DVNConfig => {
-                if (!config) return { requiredDVNs: [], optionalDVNs: [] };
-                const ulnConfig = this.getObjectProperty(config, "ulnConfig");
-                const requiredDVNs = this.getArrayProperty(ulnConfig, "requiredDVNs");
-                const optionalDVNs = this.getArrayProperty(ulnConfig, "optionalDVNs");
+                const sendConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "sendConfig");
+                const receiveConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "receiveConfig");
 
-                return {
-                    requiredDVNs: requiredDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
-                    optionalDVNs: optionalDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
+                const extractDVNConfig = (config: ObjectLiteralExpression | undefined): DVNConfig => {
+                    if (!config) return { requiredDVNs: [], optionalDVNs: [] };
+                    const ulnConfig = this.getObjectProperty(config, "ulnConfig");
+                    const requiredDVNs = this.getArrayProperty(ulnConfig, "requiredDVNs");
+                    const optionalDVNs = this.getArrayProperty(ulnConfig, "optionalDVNs");
+
+                    return {
+                        requiredDVNs: requiredDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
+                        optionalDVNs: optionalDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
+                    };
                 };
-            };
 
-            const executor = this.getObjectProperty(sendConfig, "executorConfig").getProperty("executor")?.getText() || null;
-            const executorAddress = null != executor ? executor.substring(executor.indexOf("'") + 1, executor.lastIndexOf("'")) : null;
+                const executorConfig = this.getObjectProperty(sendConfig, "executorConfig") || undefined;
+                const executor = executorConfig?.getProperty("executor")?.getText() || null;
+                const executorAddress = null != executor ? executor.substring(executor.indexOf("'") + 1, executor.lastIndexOf("'")) : null;
 
-            const connectionConfig: OAppEdgeConfig = {
-                sendConfig: {
-                    executorConfig: {
-                        maxMessageSize: this.getNumberProperty(this.getObjectProperty(sendConfig, "executorConfig"), "maxMessageSize"),
-                        executor: executorAddress,
+                const connectionConfig: OAppEdgeConfig = {
+                    sendConfig: {
+                        executorConfig: {
+                            maxMessageSize: executorConfig ? this.getNumberProperty(this.getObjectProperty(sendConfig, "executorConfig"), "maxMessageSize") : 10000,
+                            executor: executorAddress,
+                        },
+                        ulnConfig: {
+                            // not necessary list output
+                            confirmations: BigInt(0),
+                            // this.getBigIntProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "confirmations"),
+                            requiredDVNs: extractDVNConfig(sendConfig).requiredDVNs,
+                            optionalDVNs: extractDVNConfig(sendConfig).optionalDVNs,
+                            optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "optionalDVNThreshold"),
+                        },
                     },
-                    ulnConfig: {
-                        // not necessary list output
-                        confirmations: BigInt(0),
-                        // this.getBigIntProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "confirmations"),
-                        requiredDVNs: extractDVNConfig(sendConfig).requiredDVNs,
-                        optionalDVNs: extractDVNConfig(sendConfig).optionalDVNs,
-                        optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "optionalDVNThreshold"),
+                    receiveConfig: {
+                        ulnConfig: {
+                            // not necessary list output
+                            confirmations: BigInt(0),
+                            // this.getBigIntProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "confirmations"),
+                            requiredDVNs: extractDVNConfig(receiveConfig).requiredDVNs,
+                            optionalDVNs: extractDVNConfig(receiveConfig).optionalDVNs,
+                            optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "optionalDVNThreshold"),
+                        },
                     },
-                },
-                receiveConfig: {
-                    ulnConfig: {
-                        // not necessary list output
-                        confirmations: BigInt(0),
-                        // this.getBigIntProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "confirmations"),
-                        requiredDVNs: extractDVNConfig(receiveConfig).requiredDVNs,
-                        optionalDVNs: extractDVNConfig(receiveConfig).optionalDVNs,
-                        optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "optionalDVNThreshold"),
-                    },
-                },
-            };
+                };
 
-            connectionDVNs.push({ from: ophDefault, to: ophDefault, config: connectionConfig });
-        });
-
-        return connectionDVNs;
+                connectionDVNs.push({ from: ophDefault, to: ophDefault, config: connectionConfig });
+            });
+            return connectionDVNs;
+        } catch (e) {
+            console.error("Error listing DVNs:", e);
+        }
+        return [];
     }
 
     public addDVN(newDVN: string, fromContract: string, toContract: string, configType: "sendConfig" | "receiveConfig", dvnType: "requiredDVNs" | "optionalDVNs") {
@@ -348,69 +353,74 @@ export class LayerZeroConfigManager {
     }
 
     public listConnections(): Connection[] {
-        const config = this.getConfigObject();
-        const connections = this.getArrayProperty(config, "connections");
+        try {
+            const config = this.getConfigObject();
+            const connections = this.getArrayProperty(config, "connections");
 
-        return connections.getElements().map(element => {
-            const configObject = element.asKind(ts.SyntaxKind.ObjectLiteralExpression);
-            const from = (configObject?.getProperty("from") as PropertyAssignment)?.getInitializer().getText().replace(/['"]+/g, '');
-            const to = (configObject?.getProperty("to") as PropertyAssignment)?.getInitializer().getText().replace(/['"]+/g, '');
+            return connections.getElements().map(element => {
+                const configObject = element.asKind(ts.SyntaxKind.ObjectLiteralExpression);
+                const from = (configObject?.getProperty("from") as PropertyAssignment)?.getInitializer().getText().replace(/['"]+/g, '');
+                const to = (configObject?.getProperty("to") as PropertyAssignment)?.getInitializer().getText().replace(/['"]+/g, '');
 
-            const configProperty = configObject.getProperty("config") as PropertyAssignment | undefined;
-            if (!configProperty) {
-                return { from: ophDefault, to: ophDefault };
-            }
+                const configProperty = configObject.getProperty("config") as PropertyAssignment | undefined;
+                if (!configProperty) {
+                    return { from: ophDefault, to: ophDefault };
+                }
 
-            const sendConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "sendConfig");
-            const receiveConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "receiveConfig");
+                const sendConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "sendConfig");
+                const receiveConfig = this.getObjectProperty(configProperty.getInitializerIfKindOrThrow(ts.SyntaxKind.ObjectLiteralExpression), "receiveConfig");
 
-            const extractDVNConfig = (config: ObjectLiteralExpression | undefined): DVNConfig => {
-                if (!config) return { requiredDVNs: [], optionalDVNs: [] };
-                const ulnConfig = this.getObjectProperty(config, "ulnConfig");
-                const requiredDVNs = this.getArrayProperty(ulnConfig, "requiredDVNs");
-                const optionalDVNs = this.getArrayProperty(ulnConfig, "optionalDVNs");
+                const extractDVNConfig = (config: ObjectLiteralExpression | undefined): DVNConfig => {
+                    if (!config) return { requiredDVNs: [], optionalDVNs: [] };
+                    const ulnConfig = this.getObjectProperty(config, "ulnConfig");
+                    const requiredDVNs = this.getArrayProperty(ulnConfig, "requiredDVNs");
+                    const optionalDVNs = this.getArrayProperty(ulnConfig, "optionalDVNs");
+
+                    return {
+                        requiredDVNs: requiredDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
+                        optionalDVNs: optionalDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
+                    };
+                };
+                const executorConfig = this.getObjectProperty(sendConfig, "executorConfig");
+                const executor = executorConfig?.getProperty("executor")?.getText() || null;
+                const executorAddress = null != executor ? executor.substring(executor.indexOf("'") + 1, executor.lastIndexOf("'")) : null;
+
+                const connectionConfig: OAppEdgeConfig = {
+                    sendConfig: {
+                        executorConfig: {
+                            maxMessageSize: executorConfig ? this.getNumberProperty(executorConfig, "maxMessageSize") : 0,
+                            executor: executorAddress,
+                        },
+                        ulnConfig: {
+                            // TODO: fix `getBigIntProperty` in next revision
+                            confirmations: BigInt(0),
+                            // this.getBigIntProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "confirmations"),
+                            requiredDVNs: extractDVNConfig(sendConfig).requiredDVNs,
+                            optionalDVNs: extractDVNConfig(sendConfig).optionalDVNs,
+                            optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "optionalDVNThreshold"),
+                        },
+                    },
+                    receiveConfig: {
+                        ulnConfig: {
+                            confirmations: BigInt(0),
+                            //this.getBigIntProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "confirmations"),
+                            requiredDVNs: extractDVNConfig(receiveConfig).requiredDVNs,
+                            optionalDVNs: extractDVNConfig(receiveConfig).optionalDVNs,
+                            optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "optionalDVNThreshold"),
+                        },
+                    },
+                };
 
                 return {
-                    requiredDVNs: requiredDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
-                    optionalDVNs: optionalDVNs.getElements().map(element => element.getText().replace(/['"]+/g, '')),
+                    from: this.contractsCache.find(c => c.contractName === from) as unknown as OmniPointHardhat,
+                    to: this.contractsCache.find(c => c.contractName === to) as unknown as OmniPointHardhat,
+                    config: connectionConfig
                 };
-            };
-            const executorConfig = this.getObjectProperty(sendConfig, "executorConfig");
-            const executor = executorConfig?.getProperty("executor")?.getText() || null;
-            const executorAddress = null != executor ? executor.substring(executor.indexOf("'") + 1, executor.lastIndexOf("'")) : null;
-
-            const connectionConfig: OAppEdgeConfig = {
-                sendConfig: {
-                    executorConfig: {
-                        maxMessageSize: executorConfig ? this.getNumberProperty(executorConfig, "maxMessageSize") : 0,
-                        executor: executorAddress,
-                    },
-                    ulnConfig: {
-                        // TODO: fix `getBigIntProperty` in next revision
-                        confirmations: BigInt(0),
-                        // this.getBigIntProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "confirmations"),
-                        requiredDVNs: extractDVNConfig(sendConfig).requiredDVNs,
-                        optionalDVNs: extractDVNConfig(sendConfig).optionalDVNs,
-                        optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(sendConfig, "ulnConfig"), "optionalDVNThreshold"),
-                    },
-                },
-                receiveConfig: {
-                    ulnConfig: {
-                        confirmations: BigInt(0),
-                        //this.getBigIntProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "confirmations"),
-                        requiredDVNs: extractDVNConfig(receiveConfig).requiredDVNs,
-                        optionalDVNs: extractDVNConfig(receiveConfig).optionalDVNs,
-                        optionalDVNThreshold: this.getNumberProperty(this.getObjectProperty(receiveConfig, "ulnConfig"), "optionalDVNThreshold"),
-                    },
-                },
-            };
-
-            return {
-                from: this.contractsCache.find(c => c.contractName === from) as unknown as OmniPointHardhat,
-                to: this.contractsCache.find(c => c.contractName === to) as unknown as OmniPointHardhat,
-                config: connectionConfig
-            };
-        });
+            });
+        } catch (e) {
+            console.error("Error listing connections:", e);
+        }
+        return [];
     }
 
     public addConnection(fromContract: string, toContract: string) {
