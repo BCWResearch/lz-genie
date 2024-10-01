@@ -140,11 +140,11 @@ export class DVNUtils {
     dvnWireResponse.isSuccess
       ? PostHogUtil.trackEvent('DVN_WIRE_SUCCESS', {
         msg: dvnWireResponse.msg,
-        dvnConfig,
+        dvnConfig: JSON.stringify(dvnConfig),
       })
       : PostHogUtil.trackEvent('DVN_WIRE_FAILED', {
         error: dvnWireResponse.msg,
-        dvnConfig,
+        dvnConfig: JSON.stringify(dvnConfig),
       });
 
     dvnWireResponse.isSuccess
