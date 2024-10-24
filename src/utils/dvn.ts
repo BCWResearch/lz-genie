@@ -74,13 +74,14 @@ export class DVNUtils {
             console.error(`EID not found for ${from}`);
             continue;
           }
-          manager.addDVN(
-            DVNS[selectedDvn][eid],
-            from,
-            to,
-            'sendConfig',
-            'optionalDVNs'
-          );
+          if (DVNS[selectedDvn][eid])
+            manager.addDVN(
+              DVNS[selectedDvn][eid],
+              from,
+              to,
+              'sendConfig',
+              'requiredDVNs'
+            );
         }
       }
       console.log(); // appending new line after progress %
