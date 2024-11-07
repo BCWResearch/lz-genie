@@ -1,8 +1,9 @@
 import { task } from 'hardhat/config'
 import { getEidsByNetworkName } from './utils/network'
 import { DeployUtils } from '../utils/deploy';
-import '@nomiclabs/hardhat-ethers';
+import "@nomicfoundation/hardhat-ethers";
 import { ethers } from 'ethers';
+import { HardhatEthersHelpers } from '@nomicfoundation/hardhat-ethers/types';
 
 task('lzgenie:configure:dvn', 'Setup DVN', async (_, hre) => {
     // compile contracts first
@@ -27,9 +28,13 @@ task('lzgenie:configure:trust', 'Setup Trust', async (params: { [key: string]: s
         console.warn('Contract not found')
         return;
     }
-
+    const hreEthers = (hre as any)?.ethers as typeof ethers & HardhatEthersHelpers;
+    if (!hreEthers) {
+        console.error('Hardhat Ethers not loaded')
+        return;
+    }
     const eidsByNetworks = Object.entries(getEidsByNetworkName(hre));
-    const factory = await hre.ethers.getContractFactory(contract);
+    const factory = await hreEthers.getContractFactory(contract);
     const contractInstance = factory.attach(contracts[contract][source]);
 
     const remoteChainId = eidsByNetworks.find(([network, eid]) => network === target)?.[1]
@@ -37,7 +42,7 @@ task('lzgenie:configure:trust', 'Setup Trust', async (params: { [key: string]: s
         console.error('Remote chain id not found')
         return;
     }
-    const remoteAndLocal = hre.ethers.utils.solidityPack(["address", "address"], [contracts[contract][target], contractInstance.address]);
+    const remoteAndLocal = hreEthers.utils.solidityPack(["address", "address"], [contracts[contract][target], contractInstance.address]);
 
     if (contractInstance.setTrustedRemote) {
         console.log('Setting up trust bridge using setTrustedRemote');
