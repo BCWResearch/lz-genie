@@ -1,6 +1,6 @@
 {
   "name": "lzgenie",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "A set of boilerplate, scaffolding and ready to use tools to get a dev up and running quickly on l0 usecases",
   "submodules": [
     "solidity-examples"
@@ -27,7 +27,7 @@
     "@layerzerolabs/lz-definitions": "^2.3.40",
     "@layerzerolabs/toolbox-hardhat": "~0.2.21",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
-    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-ethers": "2.2.3",
     "@solidity-parser/parser": "^0.18.0",
     "@types/jest": "^29.5.12",
     "@typescript-eslint/parser": "^7.9.0",
@@ -63,10 +63,14 @@
     "hardhat": "2.22.3"
   },
   "peerDependencies": {
-    "hardhat": "2.22.3"
+    "hardhat": "2.22.3",
+    "@nomiclabs/hardhat-ethers": "2.2.3"
   },
   "peerDependenciesMeta": {
     "hardhat": {
+      "optional": false
+    },
+    "@nomiclabs/hardhat-ethers": {
       "optional": false
     }
   },
