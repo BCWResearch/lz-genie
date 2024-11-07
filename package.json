@@ -1,6 +1,6 @@
 {
   "name": "lzgenie",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "A set of boilerplate, scaffolding and ready to use tools to get a dev up and running quickly on l0 usecases",
   "submodules": [
     "solidity-examples"
@@ -14,7 +14,7 @@
     "postinstall": "npm run build",
     "start": "ts-node src/index.ts",
     "build:clean": "rm -rf bin && tsc && chmod -R 755 bin && cp -r projects bin/projects",
-    "build": "tsc",
+    "build": "tsc && cp -r projects bin/projects",
     "install:local": "yarn build && npm install -g --force",
     "uninstall:local": "npm uninstall -g lzgenie",
     "test": "node --experimental-vm-modules node_modules/.bin/jest"
@@ -62,6 +62,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/BCWResearch/bcw-lz-genie.git"
+    "url": "git://github.com/BCWResearch/lz-genie.git"
   }
 }
