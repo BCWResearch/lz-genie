@@ -18,7 +18,8 @@
     "build": "tsc && cp -r projects bin/projects",
     "install:local": "yarn build && npm install -g --force",
     "uninstall:local": "npm uninstall -g lzgenie",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:utils": "jest  --coverage src/test/utils/*"
   },
   "author": "",
   "license": "ISC",
