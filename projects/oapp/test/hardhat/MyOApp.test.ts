@@ -53,7 +53,7 @@ describe('MyOApp Test', function () {
         myOAppA = await MyOApp.deploy(mockEndpointV2A.address, ownerA.address)
         myOAppB = await MyOApp.deploy(mockEndpointV2B.address, ownerB.address)
 
-        // Setting destination endpoints in the LZEndpoint mock for each MyOApp instance
+        // Setting destination routes in the LZEndpoint mock for each MyOApp instance
         await mockEndpointV2A.setDestLzEndpoint(myOAppB.address, mockEndpointV2B.address)
         await mockEndpointV2B.setDestLzEndpoint(myOAppA.address, mockEndpointV2A.address)
 

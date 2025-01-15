@@ -55,7 +55,7 @@ describe('MyOFT Test', function () {
         myOFTA = await MyOFT.deploy('aOFT', 'aOFT', mockEndpointV2A.address, ownerA.address)
         myOFTB = await MyOFT.deploy('bOFT', 'bOFT', mockEndpointV2B.address, ownerB.address)
 
-        // Setting destination endpoints in the LZEndpoint mock for each MyOFT instance
+        // Setting destination routes in the LZEndpoint mock for each MyOFT instance
         await mockEndpointV2A.setDestLzEndpoint(myOFTB.address, mockEndpointV2B.address)
         await mockEndpointV2B.setDestLzEndpoint(myOFTA.address, mockEndpointV2A.address)
 
